@@ -34,8 +34,8 @@
             max-height: 100vh;
             box-sizing: border-box;
         }
-
         /* 📱 FORCED MOBILE LANDSCAPE ROTATION SYSTEM */
+        
         @media screen and (max-width: 1024px) and (orientation: portrait) {
             #game-container {
                 transform: rotate(90deg);
@@ -46,15 +46,15 @@
                 transform-origin: center center;
             }
         }
-
+        
         canvas {
             display: block;
             width: 100% !important;
             height: 100% !important;
             object-fit: contain;
         }
-
         /* 📱 MOBILE BUTTONS LAYER */
+        
         .mobile-ui-layer {
             display: none;
             position: absolute;
@@ -124,7 +124,9 @@
             physics: {
                 default: 'arcade',
                 arcade: {
-                    gravity: { y: 900 },
+                    gravity: {
+                        y: 900
+                    },
                     debug: false
                 }
             },
@@ -175,7 +177,9 @@
         // --- 2. TITLE SCREEN SCENE ---
         class TitleScene extends Phaser.Scene {
             constructor() {
-                super({ key: 'TitleScene' });
+                super({
+                    key: 'TitleScene'
+                });
             }
             preload() {
                 this.load.image('arayat_bg', 'assets/images/Cartoon_Forest_BG_03.png');
@@ -183,7 +187,7 @@
             create() {
                 this.scale.refresh();
                 this.add.image(512, 288, 'arayat_bg').setDisplaySize(1024, 576).setAlpha(0.6);
-                
+
                 // Pixel Style Hover Title
                 let titleText = this.add.text(512, 180, 'MARIA SINUKUAN', {
                     fontSize: '64px',
@@ -203,16 +207,21 @@
 
                 this.tweens.add({
                     targets: [titleText, subtitleText],
-                    y: '-=15',              
-                    duration: 1800,         
-                    yoyo: true,             
-                    loop: -1,               
-                    ease: 'Sine.easeInOut' 
+                    y: '-=15',
+                    duration: 1800,
+                    yoyo: true,
+                    loop: -1,
+                    ease: 'Sine.easeInOut'
                 });
 
-                let startBtnBg = this.add.rectangle(512, 390, 240, 60, 0x1b5e20).setInteractive({ useHandCursor: true });
+                let startBtnBg = this.add.rectangle(512, 390, 240, 60, 0x1b5e20).setInteractive({
+                    useHandCursor: true
+                });
                 let startBtnText = this.add.text(512, 390, 'START GAME', {
-                    fontSize: '22px', fill: '#ffffff', fontStyle: 'bold', fontFamily: 'Courier New'
+                    fontSize: '22px',
+                    fill: '#ffffff',
+                    fontStyle: 'bold',
+                    fontFamily: 'Courier New'
                 }).setOrigin(0.5);
 
                 startBtnBg.on('pointerover', () => {
@@ -223,7 +232,8 @@
                     startBtnBg.setFillStyle(0x1b5e20);
                     startBtnText.setFill('#ffffff');
                 });
-                
+
+                // Start Game & Audio Context
                 startBtnBg.on('pointerdown', () => {
                     if (this.sound.context.state === 'suspended') {
                         this.sound.context.resume();
@@ -235,77 +245,240 @@
 
         // --- 3. CORE GAMEPLAY SCENE ---
         class GameScene extends Phaser.Scene {
-            constructor() { super({ key: 'GameScene' }); }
+            constructor() {
+                super({
+                    key: 'GameScene'
+                });
+            }
 
             init() {
                 this.input.keyboard.removeAllKeys();
                 this.input.removeAllListeners();
 
-                player = null; platforms = null; projectiles = null; enemies = null;
-                currentWave = 1; totalKills = 0; wave2Kills = 0; canTransform = true; shiftCooldownTimer = 0;
-                bossBody = null; tankProjectiles = null; bossHealth = 500; bossMaxHealth = 500; bossActive = false;
-                bossUIContainer = null; bossFillBar = null; bossCanTakeDamage = true;
-                currentForm = 'diwata'; wrath = 0; isAttacking = false; playerHealth = 100; isDead = false; isShifting = false;
-                moveLeft = false; moveRight = false; bgMusic = null;
+                player = null;
+                platforms = null;
+                projectiles = null;
+                enemies = null;
+                currentWave = 1;
+                totalKills = 0;
+                wave2Kills = 0;
+                canTransform = true;
+                shiftCooldownTimer = 0;
+                bossBody = null;
+                tankProjectiles = null;
+                bossHealth = 500;
+                bossMaxHealth = 500;
+                bossActive = false;
+                bossUIContainer = null;
+                bossFillBar = null;
+                bossCanTakeDamage = true;
+                currentForm = 'diwata';
+                wrath = 0;
+                isAttacking = false;
+                playerHealth = 100;
+                isDead = false;
+                isShifting = false;
+                moveLeft = false;
+                moveRight = false;
+                bgMusic = null;
             }
 
             preload() {
-                this.load.audio('snd_bgm', 'assets/audio/Track_greenzone.mp3'); 
+                // ==========================================
+                // 🔊 SPECIFIC AUDIO ASSET CONFIGURATION
+                // ==========================================
+                this.load.audio('snd_bgm', 'assets/audio/Track_greenzone.mp3');
                 this.load.audio('snd_tank_shot', 'assets/audio/Tank_shot.wav');
                 this.load.audio('snd_diwata_atk', 'assets/audio/Blaster.wav');
                 this.load.audio('snd_ermitanyo_atk', 'assets/audio/Punch.wav');
                 this.load.audio('snd_hurt', 'assets/audio/Bump.wav');
                 this.load.audio('snd_die', 'assets/audio/Dead1.wav');
                 this.load.audio('snd_boss_die', 'assets/audio/Explosion2.wav');
+                // ==========================================
 
-                let groundCanvas = document.createElement('canvas'); groundCanvas.width = 32; groundCanvas.height = 32;
-                let ctx = groundCanvas.getContext('2d'); ctx.fillStyle = '#5d4037'; ctx.fillRect(0, 0, 32, 32);
-                ctx.fillStyle = '#4e342e'; ctx.fillRect(4, 12, 4, 4); ctx.fillRect(16, 24, 4, 4); ctx.fillRect(24, 16, 4, 4);
-                ctx.fillStyle = '#2e7d32'; ctx.fillRect(0, 0, 32, 8); ctx.fillStyle = '#4caf50'; ctx.fillRect(0, 0, 4, 4);
-                ctx.fillRect(12, 0, 8, 4); ctx.fillRect(16, 4, 4, 4); ctx.fillStyle = '#2e7d32'; ctx.fillRect(4, 8, 4, 4); ctx.fillRect(20, 8, 4, 4);
+                let groundCanvas = document.createElement('canvas');
+                groundCanvas.width = 32;
+                groundCanvas.height = 32;
+                let ctx = groundCanvas.getContext('2d');
+                ctx.fillStyle = '#5d4037';
+                ctx.fillRect(0, 0, 32, 32);
+                ctx.fillStyle = '#4e342e';
+                ctx.fillRect(4, 12, 4, 4);
+                ctx.fillRect(16, 24, 4, 4);
+                ctx.fillRect(24, 16, 4, 4);
+                ctx.fillStyle = '#2e7d32';
+                ctx.fillRect(0, 0, 32, 8);
+                ctx.fillStyle = '#4caf50';
+                ctx.fillRect(0, 0, 4, 4);
+                ctx.fillRect(12, 0, 8, 4);
+                ctx.fillRect(16, 4, 4, 4);
+                ctx.fillStyle = '#2e7d32';
+                ctx.fillRect(4, 8, 4, 4);
+                ctx.fillRect(20, 8, 4, 4);
                 this.textures.addCanvas('ground', groundCanvas);
 
-                this.load.spritesheet('diwata_idle_sheet', 'assets/images/Woman_idle.png', { frameWidth: 48, frameHeight: 48 });
-                this.load.spritesheet('diwata_walk_sheet', 'assets/images/Woman_walk.png', { frameWidth: 48, frameHeight: 48 });
-                this.load.spritesheet('diwata_hurt_sheet', 'assets/images/Woman_hurt.png', { frameWidth: 48, frameHeight: 48 });
-                this.load.spritesheet('diwata_attack_sheet', 'assets/images/Woman_attack.png', { frameWidth: 48, frameHeight: 48 });
-                this.load.spritesheet('diwata_death_sheet', 'assets/images/Woman_death.png', { frameWidth: 48, frameHeight: 48 });
-                this.load.spritesheet('ermitanyo_idle_sheet', 'assets/images/Idle.png', { frameWidth: 128, frameHeight: 128 });
-                this.load.spritesheet('ermitanyo_walk_sheet', 'assets/images/Walk.png', { frameWidth: 128, frameHeight: 128 });
-                this.load.spritesheet('ermitanyo_hurt_sheet', 'assets/images/Hurt.png', { frameWidth: 128, frameHeight: 128 });
-                this.load.spritesheet('ermitanyo_attack_sheet', 'assets/images/Attack_2.png', { frameWidth: 128, frameHeight: 128 });
-                this.load.spritesheet('ermitanyo_death_sheet', 'assets/images/Dead.png', { frameWidth: 128, frameHeight: 128 });
-                this.load.spritesheet('projectile_sheet', 'assets/images/Charge_1.png', { frameWidth: 64, frameHeight: 128 });
-                this.load.spritesheet('fx_sheet', 'assets/images/effects.png', { frameWidth: 32, frameHeight: 32 });
-                this.load.spritesheet('graverobber_idle', 'assets/images/GraveRobber_idle.png', { frameWidth: 48, frameHeight: 48 });
-                this.load.spritesheet('graverobber_walk', 'assets/images/GraveRobber_walk.png', { frameWidth: 48, frameHeight: 48 });
-                this.load.spritesheet('graverobber_hurt', 'assets/images/GraveRobber_hurt.png', { frameWidth: 48, frameHeight: 48 });
-                this.load.spritesheet('graverobber_attack', 'assets/images/GraveRobber_attack2.png', { frameWidth: 48, frameHeight: 48 });
-                this.load.spritesheet('graverobber_death', 'assets/images/GraveRobber_death.png', { frameWidth: 48, frameHeight: 48 });
-                this.load.spritesheet('orc_idle', 'assets/images/orcIdle.png', { frameWidth: 96, frameHeight: 96 });
-                this.load.spritesheet('orc_walk', 'assets/images/orcWalk.png', { frameWidth: 96, frameHeight: 96 });
-                this.load.spritesheet('orc_hurt', 'assets/images/orcHurt.png', { frameWidth: 96, frameHeight: 96 });
-                this.load.spritesheet('orc_attack', 'assets/images/orcAttack_1.png', { frameWidth: 96, frameHeight: 96 });
-                this.load.spritesheet('orc_death', 'assets/images/orcDead.png', { frameWidth: 96, frameHeight: 96 });
-                this.load.spritesheet('orc2_idle', 'assets/images/orc2Idle.png', { frameWidth: 96, frameHeight: 96 });
-                this.load.spritesheet('orc2_hurt', 'assets/images/orc2Hurt.png', { frameWidth: 96, frameHeight: 96 });
-                this.load.spritesheet('orc2_attack', 'assets/images/orc2Attack_1.png', { frameWidth: 96, frameHeight: 96 });
-                this.load.spritesheet('orc2_death', 'assets/images/orc2Dead.png', { frameWidth: 96, frameHeight: 96 });
-                this.load.spritesheet('orc2_walk', 'assets/images/orc2Walk.png', { frameWidth: 96, frameHeight: 96 });
-                this.load.spritesheet('wolf_idle', 'assets/images/wolfIdle.png', { frameWidth: 128, frameHeight: 128 });
-                this.load.spritesheet('wolf_walk', 'assets/images/wolfwalk.png', { frameWidth: 128, frameHeight: 128 });
-                this.load.spritesheet('wolf_hurt', 'assets/images/wolfHurt.png', { frameWidth: 128, frameHeight: 128 });
-                this.load.spritesheet('wolf_attack', 'assets/images/WolfAttack_1.png', { frameWidth: 128, frameHeight: 128 });
-                this.load.spritesheet('wolf_death', 'assets/images/wolfDead.png', { frameWidth: 128, frameHeight: 128 });
-                this.load.spritesheet('woodcutter_walk', 'assets/images/Woodcutter_walk.png', { frameWidth: 48, frameHeight: 48 });
-                this.load.spritesheet('woodcutter_hurt', 'assets/images/Woodcutter_hurt.png', { frameWidth: 48, frameHeight: 48 });
-                this.load.spritesheet('woodcutter_death', 'assets/images/Woodcutter_death.png', { frameWidth: 48, frameHeight: 48 });
-                this.load.spritesheet('woodcutter_attack', 'assets/images/Woodcutter_attack1.png', { frameWidth: 48, frameHeight: 48 });
-                this.load.spritesheet('boss_tank_body', 'assets/images/Tank1.png', { frameWidth: 80, frameHeight: 48 });
-                
-                let shellCanvas = document.createElement('canvas'); shellCanvas.width = 16; shellCanvas.height = 16;
-                let shellCtx = shellCanvas.getContext('2d'); shellCtx.fillStyle = '#37474f'; shellCtx.beginPath(); shellCtx.arc(8, 8, 8, 0, Math.PI * 2); shellCtx.fill();
-                shellCtx.fillStyle = '#cfd8dc'; shellCtx.beginPath(); shellCtx.arc(5, 5, 2, 0, Math.PI * 2); shellCtx.fill(); this.textures.addCanvas('tank_shell', shellCanvas);
+                this.load.spritesheet('diwata_idle_sheet', 'assets/images/Woman_idle.png', {
+                    frameWidth: 48,
+                    frameHeight: 48
+                });
+                this.load.spritesheet('diwata_walk_sheet', 'assets/images/Woman_walk.png', {
+                    frameWidth: 48,
+                    frameHeight: 48
+                });
+                this.load.spritesheet('diwata_hurt_sheet', 'assets/images/Woman_hurt.png', {
+                    frameWidth: 48,
+                    frameHeight: 48
+                });
+                this.load.spritesheet('diwata_attack_sheet', 'assets/images/Woman_attack.png', {
+                    frameWidth: 48,
+                    frameHeight: 48
+                });
+                this.load.spritesheet('diwata_death_sheet', 'assets/images/Woman_death.png', {
+                    frameWidth: 48,
+                    frameHeight: 48
+                });
+                this.load.spritesheet('ermitanyo_idle_sheet', 'assets/images/Idle.png', {
+                    frameWidth: 128,
+                    frameHeight: 128
+                });
+                this.load.spritesheet('ermitanyo_walk_sheet', 'assets/images/Walk.png', {
+                    frameWidth: 128,
+                    frameHeight: 128
+                });
+                this.load.spritesheet('ermitanyo_hurt_sheet', 'assets/images/Hurt.png', {
+                    frameWidth: 128,
+                    frameHeight: 128
+                });
+                this.load.spritesheet('ermitanyo_attack_sheet', 'assets/images/Attack_2.png', {
+                    frameWidth: 128,
+                    frameHeight: 128
+                });
+                this.load.spritesheet('ermitanyo_death_sheet', 'assets/images/Dead.png', {
+                    frameWidth: 128,
+                    frameHeight: 128
+                });
+                this.load.spritesheet('projectile_sheet', 'assets/images/Charge_1.png', {
+                    frameWidth: 64,
+                    frameHeight: 128
+                });
+                this.load.spritesheet('fx_sheet', 'assets/images/effects.png', {
+                    frameWidth: 32,
+                    frameHeight: 32
+                });
+                this.load.spritesheet('graverobber_idle', 'assets/images/GraveRobber_idle.png', {
+                    frameWidth: 48,
+                    frameHeight: 48
+                });
+                this.load.spritesheet('graverobber_walk', 'assets/images/GraveRobber_walk.png', {
+                    frameWidth: 48,
+                    frameHeight: 48
+                });
+                this.load.spritesheet('graverobber_hurt', 'assets/images/GraveRobber_hurt.png', {
+                    frameWidth: 48,
+                    frameHeight: 48
+                });
+                this.load.spritesheet('graverobber_attack', 'assets/images/GraveRobber_attack2.png', {
+                    frameWidth: 48,
+                    frameHeight: 48
+                });
+                this.load.spritesheet('graverobber_death', 'assets/images/GraveRobber_death.png', {
+                    frameWidth: 48,
+                    frameHeight: 48
+                });
+                this.load.spritesheet('orc_idle', 'assets/images/orcIdle.png', {
+                    frameWidth: 96,
+                    frameHeight: 96
+                });
+                this.load.spritesheet('orc_walk', 'assets/images/orcWalk.png', {
+                    frameWidth: 96,
+                    frameHeight: 96
+                });
+                this.load.spritesheet('orc_hurt', 'assets/images/orcHurt.png', {
+                    frameWidth: 96,
+                    frameHeight: 96
+                });
+                this.load.spritesheet('orc_attack', 'assets/images/orcAttack_1.png', {
+                    frameWidth: 96,
+                    frameHeight: 96
+                });
+                this.load.spritesheet('orc_death', 'assets/images/orcDead.png', {
+                    frameWidth: 96,
+                    frameHeight: 96
+                });
+                this.load.spritesheet('orc2_idle', 'assets/images/orc2Idle.png', {
+                    frameWidth: 96,
+                    frameHeight: 96
+                });
+                this.load.spritesheet('orc2_hurt', 'assets/images/orc2Hurt.png', {
+                    frameWidth: 96,
+                    frameHeight: 96
+                });
+                this.load.spritesheet('orc2_attack', 'assets/images/orc2Attack_1.png', {
+                    frameWidth: 96,
+                    frameHeight: 96
+                });
+                this.load.spritesheet('orc2_death', 'assets/images/orc2Dead.png', {
+                    frameWidth: 96,
+                    frameHeight: 96
+                });
+                this.load.spritesheet('orc2_walk', 'assets/images/orc2Walk.png', {
+                    frameWidth: 96,
+                    frameHeight: 96
+                });
+                this.load.spritesheet('wolf_idle', 'assets/images/wolfIdle.png', {
+                    frameWidth: 128,
+                    frameHeight: 128
+                });
+                this.load.spritesheet('wolf_walk', 'assets/images/wolfwalk.png', {
+                    frameWidth: 128,
+                    frameHeight: 128
+                });
+                this.load.spritesheet('wolf_hurt', 'assets/images/WolfHurt.png', {
+                    frameWidth: 128,
+                    frameHeight: 128
+                });
+                this.load.spritesheet('wolf_attack', 'assets/images/WolfAttack_1.png', {
+                    frameWidth: 128,
+                    frameHeight: 128
+                });
+                this.load.spritesheet('wolf_death', 'assets/images/wolfDead.png', {
+                    frameWidth: 128,
+                    frameHeight: 128
+                });
+                this.load.spritesheet('woodcutter_walk', 'assets/images/Woodcutter_walk.png', {
+                    frameWidth: 48,
+                    frameHeight: 48
+                });
+                this.load.spritesheet('woodcutter_hurt', 'assets/images/Woodcutter_hurt.png', {
+                    frameWidth: 48,
+                    frameHeight: 48
+                });
+                this.load.spritesheet('woodcutter_death', 'assets/images/Woodcutter_death.png', {
+                    frameWidth: 48,
+                    frameHeight: 48
+                });
+                this.load.spritesheet('woodcutter_attack', 'assets/images/Woodcutter_attack1.png', {
+                    frameWidth: 48,
+                    frameHeight: 48
+                });
+                this.load.spritesheet('boss_tank_body', 'assets/images/Tank1.png', {
+                    frameWidth: 80,
+                    frameHeight: 48
+                });
+
+                let shellCanvas = document.createElement('canvas');
+                shellCanvas.width = 16;
+                shellCanvas.height = 16;
+                let shellCtx = shellCanvas.getContext('2d');
+                shellCtx.fillStyle = '#37474f';
+                shellCtx.beginPath();
+                shellCtx.arc(8, 8, 8, 0, Math.PI * 2);
+                shellCtx.fill();
+                shellCtx.fillStyle = '#cfd8dc';
+                shellCtx.beginPath();
+                shellCtx.arc(5, 5, 2, 0, Math.PI * 2);
+                shellCtx.fill();
+                this.textures.addCanvas('tank_shell', shellCanvas);
             }
 
             create() {
@@ -313,74 +486,389 @@
                 this.add.image(512, 288, 'arayat_bg').setDisplaySize(1024, 576);
                 this.bindMobileNavigationDOM();
 
-                // 🔊 Safe audio fallback guard
-                if (this.cache.audio.exists('snd_bgm')) {
-                    try {
-                        bgMusic = this.sound.add('snd_bgm', { loop: true, volume: 0.4 });
-                        bgMusic.play();
-                    } catch (e) { console.log("BGM playback skipped."); }
+                // 🔊 Start Background Music Safely
+                try {
+                    bgMusic = this.sound.add('snd_bgm', {
+                        loop: true,
+                        volume: 0.4
+                    });
+                    bgMusic.play();
+                } catch (e) {
+                    console.log("BGM file missing or skipped.");
                 }
 
                 platforms = this.physics.add.staticGroup();
-                platforms.create(512, 544, 'ground').setDisplaySize(1024, 64).refreshBody(); 
-                platforms.create(150, 370, 'ground').setDisplaySize(250, 24).refreshBody(); 
-                platforms.create(874, 370, 'ground').setDisplaySize(250, 24).refreshBody(); 
-                platforms.create(350, 230, 'ground').setDisplaySize(300, 24).refreshBody(); 
-                platforms.create(674, 230, 'ground').setDisplaySize(300, 24).refreshBody(); 
-                platforms.create(512, 100, 'ground').setDisplaySize(700, 24).refreshBody(); 
+                platforms.create(512, 544, 'ground').setDisplaySize(1024, 64).refreshBody();
+                platforms.create(150, 370, 'ground').setDisplaySize(250, 24).refreshBody();
+                platforms.create(874, 370, 'ground').setDisplaySize(250, 24).refreshBody();
+                platforms.create(350, 230, 'ground').setDisplaySize(300, 24).refreshBody();
+                platforms.create(674, 230, 'ground').setDisplaySize(300, 24).refreshBody();
+                platforms.create(512, 100, 'ground').setDisplaySize(700, 24).refreshBody();
 
                 player = this.physics.add.sprite(100, 468, 'diwata_idle_sheet').setScale(2);
                 player.body.setSize(18, 44, false).setOffset(15, 4).setCollideWorldBounds(true);
                 this.physics.add.collider(player, platforms);
 
-                // 🛠️ RESTORED: MASTER ANIMATION ENGINE STATES REGISTRATION BLOCK
-                this.anims.create({ key: 'diwata_idle', frames: this.anims.generateFrameNumbers('diwata_idle_sheet', { start: 0, end: 3 }), frameRate: 6, repeat: -1 });
-                this.anims.create({ key: 'diwata_walk', frames: this.anims.generateFrameNumbers('diwata_walk_sheet', { start: 0, end: 5 }), frameRate: 10, repeat: -1 });
-                this.anims.create({ key: 'diwata_hurt', frames: this.anims.generateFrameNumbers('diwata_hurt_sheet', { start: 0, end: 1 }), frameRate: 10, repeat: 0 });
-                this.anims.create({ key: 'diwata_attack', frames: this.anims.generateFrameNumbers('diwata_attack_sheet', { start: 0, end: 3 }), frameRate: 15, repeat: 0 });
-                this.anims.create({ key: 'diwata_death', frames: this.anims.generateFrameNumbers('diwata_death_sheet', { start: 0, end: 4 }), frameRate: 5, repeat: 0 });
-                this.anims.create({ key: 'ermitanyo_idle', frames: this.anims.generateFrameNumbers('ermitanyo_idle_sheet', { start: 0, end: 7 }), frameRate: 6, repeat: -1 });
-                this.anims.create({ key: 'ermitanyo_walk', frames: this.anims.generateFrameNumbers('ermitanyo_walk_sheet', { start: 0, end: 5 }), frameRate: 10, repeat: -1 });
-                this.anims.create({ key: 'ermitanyo_hurt', frames: this.anims.generateFrameNumbers('ermitanyo_hurt_sheet', { start: 0, end: 3 }), frameRate: 10, repeat: 0 });
-                this.anims.create({ key: 'ermitanyo_attack', frames: this.anims.generateFrameNumbers('ermitanyo_attack_sheet', { start: 0, end: 8 }), frameRate: 15, repeat: 0 });
-                this.anims.create({ key: 'ermitanyo_death', frames: this.anims.generateFrameNumbers('ermitanyo_death_sheet', { start: 0, end: 3 }), frameRate: 5, repeat: 0 });
-                this.anims.create({ key: 'magic_spin', frames: this.anims.generateFrameNumbers('projectile_sheet', { start: 0, end: 8 }), frameRate: 18, repeat: -1 });
-                this.anims.create({ key: 'trans_burst', frames: this.anims.generateFrameNumbers('fx_sheet', { start: 31, end: 36 }), frameRate: 20, repeat: 0 });
-                this.anims.create({ key: 'graverobber_idle_key', frames: this.anims.generateFrameNumbers('graverobber_idle', { start: 0, end: 3 }), frameRate: 6, repeat: -1 });
-                this.anims.create({ key: 'graverobber_walk_key', frames: this.anims.generateFrameNumbers('graverobber_walk', { start: 0, end: 5 }), frameRate: 8, repeat: -1 });
-                this.anims.create({ key: 'graverobber_hurt_key', frames: this.anims.generateFrameNumbers('graverobber_hurt', { start: 0, end: 2 }), frameRate: 10, repeat: 0 });
-                this.anims.create({ key: 'graverobber_attack_key', frames: this.anims.generateFrameNumbers('graverobber_attack', { start: 0, end: 5 }), frameRate: 12, repeat: 0 });
-                this.anims.create({ key: 'graverobber_death_key', frames: this.anims.generateFrameNumbers('graverobber_death', { start: 0, end: 5 }), frameRate: 8, repeat: 0 });
-                this.anims.create({ key: 'orc_idle_key', frames: this.anims.generateFrameNumbers('orc_idle', { start: 0, end: 4 }), frameRate: 6, repeat: -1 });
-                this.anims.create({ key: 'orc_walk_key', frames: this.anims.generateFrameNumbers('orc_walk', { start: 0, end: 6 }), frameRate: 8, repeat: -1 });
-                this.anims.create({ key: 'orc_hurt_key', frames: this.anims.generateFrameNumbers('orc_hurt', { start: 0, end: 1 }), frameRate: 10, repeat: 0 });
-                this.anims.create({ key: 'orc_attack_key', frames: this.anims.generateFrameNumbers('orc_attack', { start: 0, end: 3 }), frameRate: 10, repeat: 0 });
-                this.anims.create({ key: 'orc_death_key', frames: this.anims.generateFrameNumbers('orc_death', { start: 0, end: 3 }), frameRate: 8, repeat: 0 });
-                this.anims.create({ key: 'orc2_idle_key', frames: this.anims.generateFrameNumbers('orc2_idle', { start: 0, end: 4 }), frameRate: 6, repeat: -1 });
-                this.anims.create({ key: 'orc2_walk_key', frames: this.anims.generateFrameNumbers('orc2_walk', { start: 0, end: 6 }), frameRate: 8, repeat: -1 });
-                this.anims.create({ key: 'orc2_hurt_key', frames: this.anims.generateFrameNumbers('orc2_hurt', { start: 0, end: 1 }), frameRate: 10, repeat: 0 });
-                this.anims.create({ key: 'orc2_attack_key', frames: this.anims.generateFrameNumbers('orc2_attack', { start: 0, end: 3 }), frameRate: 10, repeat: 0 });
-                this.anims.create({ key: 'orc2_death_key', frames: this.anims.generateFrameNumbers('orc2_death', { start: 0, end: 4 }), frameRate: 8, repeat: 0 });
-                this.anims.create({ key: 'wolf_idle_key', frames: this.anims.generateFrameNumbers('wolf_idle', { start: 0, end: 7 }), frameRate: 8, repeat: -1 });
-                this.anims.create({ key: 'wolf_walk_key', frames: this.anims.generateFrameNumbers('wolf_walk', { start: 0, end: 10 }), frameRate: 12, repeat: -1 });
-                this.anims.create({ key: 'wolf_hurt_key', frames: this.anims.generateFrameNumbers('wolf_hurt', { start: 0, end: 1 }), frameRate: 10, repeat: 0 });
-                this.anims.create({ key: 'wolf_attack_key', frames: this.anims.generateFrameNumbers('wolf_attack', { start: 0, end: 5 }), frameRate: 12, repeat: 0 });
-                this.anims.create({ key: 'wolf_death_key', frames: this.anims.generateFrameNumbers('wolf_death', { start: 0, end: 1 }), frameRate: 6, repeat: 0 });
-                this.anims.create({ key: 'woodcutter_walk_key', frames: this.anims.generateFrameNumbers('woodcutter_walk', { start: 0, end: 4 }), frameRate: 8, repeat: -1 });
-                this.anims.create({ key: 'woodcutter_hurt_key', frames: this.anims.generateFrameNumbers('woodcutter_hurt', { start: 0, end: 2 }), frameRate: 10, repeat: 0 });
-                this.anims.create({ key: 'woodcutter_attack_key', frames: this.anims.generateFrameNumbers('woodcutter_attack', { start: 0, end: 5 }), frameRate: 12, repeat: 0 });
-                this.anims.create({ key: 'woodcutter_death_key', frames: this.anims.generateFrameNumbers('woodcutter_death', { start: 0, end: 5 }), frameRate: 8, repeat: 0 });
-                this.anims.create({ key: 'tank_treads_roll', frames: this.anims.generateFrameNumbers('boss_tank_body', { start: 0, end: 2 }), frameRate: 8, repeat: -1 });
+                this.anims.create({
+                    key: 'diwata_idle',
+                    frames: this.anims.generateFrameNumbers('diwata_idle_sheet', {
+                        start: 0,
+                        end: 3
+                    }),
+                    frameRate: 6,
+                    repeat: -1
+                });
+                this.anims.create({
+                    key: 'diwata_walk',
+                    frames: this.anims.generateFrameNumbers('diwata_walk_sheet', {
+                        start: 0,
+                        end: 5
+                    }),
+                    frameRate: 10,
+                    repeat: -1
+                });
+                this.anims.create({
+                    key: 'diwata_hurt',
+                    frames: this.anims.generateFrameNumbers('diwata_hurt_sheet', {
+                        start: 0,
+                        end: 1
+                    }),
+                    frameRate: 10,
+                    repeat: 0
+                });
+                this.anims.create({
+                    key: 'diwata_attack',
+                    frames: this.anims.generateFrameNumbers('diwata_attack_sheet', {
+                        start: 0,
+                        end: 3
+                    }),
+                    frameRate: 15,
+                    repeat: 0
+                });
+                this.anims.create({
+                    key: 'diwata_death',
+                    frames: this.anims.generateFrameNumbers('diwata_death_sheet', {
+                        start: 0,
+                        end: 4
+                    }),
+                    frameRate: 5,
+                    repeat: 0
+                });
+                this.anims.create({
+                    key: 'ermitanyo_idle',
+                    frames: this.anims.generateFrameNumbers('ermitanyo_idle_sheet', {
+                        start: 0,
+                        end: 7
+                    }),
+                    frameRate: 6,
+                    repeat: -1
+                });
+                this.anims.create({
+                    key: 'ermitanyo_walk',
+                    frames: this.anims.generateFrameNumbers('ermitanyo_walk_sheet', {
+                        start: 0,
+                        end: 5
+                    }),
+                    frameRate: 10,
+                    repeat: -1
+                });
+                this.anims.create({
+                    key: 'ermitanyo_hurt',
+                    frames: this.anims.generateFrameNumbers('ermitanyo_hurt_sheet', {
+                        start: 0,
+                        end: 3
+                    }),
+                    frameRate: 10,
+                    repeat: 0
+                });
+                this.anims.create({
+                    key: 'ermitanyo_attack',
+                    frames: this.anims.generateFrameNumbers('ermitanyo_attack_sheet', {
+                        start: 0,
+                        end: 8
+                    }),
+                    frameRate: 15,
+                    repeat: 0
+                });
+                this.anims.create({
+                    key: 'ermitanyo_death',
+                    frames: this.anims.generateFrameNumbers('ermitanyo_death_sheet', {
+                        start: 0,
+                        end: 3
+                    }),
+                    frameRate: 5,
+                    repeat: 0
+                });
+                this.anims.create({
+                    key: 'magic_spin',
+                    frames: this.anims.generateFrameNumbers('projectile_sheet', {
+                        start: 0,
+                        end: 8
+                    }),
+                    frameRate: 18,
+                    repeat: -1
+                });
+                this.anims.create({
+                    key: 'trans_burst',
+                    frames: this.anims.generateFrameNumbers('fx_sheet', {
+                        start: 31,
+                        end: 36
+                    }),
+                    frameRate: 20,
+                    repeat: 0
+                });
+                this.anims.create({
+                    key: 'graverobber_idle_key',
+                    frames: this.anims.generateFrameNumbers('graverobber_idle', {
+                        start: 0,
+                        end: 3
+                    }),
+                    frameRate: 6,
+                    repeat: -1
+                });
+                this.anims.create({
+                    key: 'graverobber_walk_key',
+                    frames: this.anims.generateFrameNumbers('graverobber_walk', {
+                        start: 0,
+                        end: 5
+                    }),
+                    frameRate: 8,
+                    repeat: -1
+                });
+                this.anims.create({
+                    key: 'graverobber_hurt_key',
+                    frames: this.anims.generateFrameNumbers('graverobber_hurt', {
+                        start: 0,
+                        end: 2
+                    }),
+                    frameRate: 10,
+                    repeat: 0
+                });
+                this.anims.create({
+                    key: 'graverobber_attack_key',
+                    frames: this.anims.generateFrameNumbers('graverobber_attack', {
+                        start: 0,
+                        end: 5
+                    }),
+                    frameRate: 12,
+                    repeat: 0
+                });
+                this.anims.create({
+                    key: 'graverobber_death_key',
+                    frames: this.anims.generateFrameNumbers('graverobber_death', {
+                        start: 0,
+                        end: 5
+                    }),
+                    frameRate: 8,
+                    repeat: 0
+                });
+                this.anims.create({
+                    key: 'orc_idle_key',
+                    frames: this.anims.generateFrameNumbers('orc_idle', {
+                        start: 0,
+                        end: 4
+                    }),
+                    frameRate: 6,
+                    repeat: -1
+                });
+                this.anims.create({
+                    key: 'orc_walk_key',
+                    frames: this.anims.generateFrameNumbers('orc_walk', {
+                        start: 0,
+                        end: 6
+                    }),
+                    frameRate: 8,
+                    repeat: -1
+                });
+                this.anims.create({
+                    key: 'orc_hurt_key',
+                    frames: this.anims.generateFrameNumbers('orc_hurt', {
+                        start: 0,
+                        end: 1
+                    }),
+                    frameRate: 10,
+                    repeat: 0
+                });
+                this.anims.create({
+                    key: 'orc_attack_key',
+                    frames: this.anims.generateFrameNumbers('orc_attack', {
+                        start: 0,
+                        end: 3
+                    }),
+                    frameRate: 10,
+                    repeat: 0
+                });
+                this.anims.create({
+                    key: 'orc_death_key',
+                    frames: this.anims.generateFrameNumbers('orc_death', {
+                        start: 0,
+                        end: 3
+                    }),
+                    frameRate: 8,
+                    repeat: 0
+                });
+                this.anims.create({
+                    key: 'orc2_idle_key',
+                    frames: this.anims.generateFrameNumbers('orc2_idle', {
+                        start: 0,
+                        end: 4
+                    }),
+                    frameRate: 6,
+                    repeat: -1
+                });
+                this.anims.create({
+                    key: 'orc2_walk_key',
+                    frames: this.anims.generateFrameNumbers('orc2_walk', {
+                        start: 0,
+                        end: 6
+                    }),
+                    frameRate: 8,
+                    repeat: -1
+                });
+                this.anims.create({
+                    key: 'orc2_hurt_key',
+                    frames: this.anims.generateFrameNumbers('orc2_hurt', {
+                        start: 0,
+                        end: 1
+                    }),
+                    frameRate: 10,
+                    repeat: 0
+                });
+                this.anims.create({
+                    key: 'orc2_attack_key',
+                    frames: this.anims.generateFrameNumbers('orc2_attack', {
+                        start: 0,
+                        end: 3
+                    }),
+                    frameRate: 10,
+                    repeat: 0
+                });
+                this.anims.create({
+                    key: 'orc2_death_key',
+                    frames: this.anims.generateFrameNumbers('orc2_death', {
+                        start: 0,
+                        end: 4
+                    }),
+                    frameRate: 8,
+                    repeat: 0
+                });
+                this.anims.create({
+                    key: 'wolf_idle_key',
+                    frames: this.anims.generateFrameNumbers('wolf_idle', {
+                        start: 0,
+                        end: 7
+                    }),
+                    frameRate: 8,
+                    repeat: -1
+                });
+                this.anims.create({
+                    key: 'wolf_walk_key',
+                    frames: this.anims.generateFrameNumbers('wolf_walk', {
+                        start: 0,
+                        end: 10
+                    }),
+                    frameRate: 12,
+                    repeat: -1
+                });
+                this.anims.create({
+                    key: 'wolf_hurt_key',
+                    frames: this.anims.generateFrameNumbers('wolf_hurt', {
+                        start: 0,
+                        end: 1
+                    }),
+                    frameRate: 10,
+                    repeat: 0
+                });
+                this.anims.create({
+                    key: 'wolf_attack_key',
+                    frames: this.anims.generateFrameNumbers('wolf_attack', {
+                        start: 0,
+                        end: 5
+                    }),
+                    frameRate: 12,
+                    repeat: 0
+                });
+                this.anims.create({
+                    key: 'wolf_death_key',
+                    frames: this.anims.generateFrameNumbers('wolf_death', {
+                        start: 0,
+                        end: 1
+                    }),
+                    frameRate: 6,
+                    repeat: 0
+                });
+                this.anims.create({
+                    key: 'woodcutter_walk_key',
+                    frames: this.anims.generateFrameNumbers('woodcutter_walk', {
+                        start: 0,
+                        end: 4
+                    }),
+                    frameRate: 8,
+                    repeat: -1
+                });
+                this.anims.create({
+                    key: 'woodcutter_hurt_key',
+                    frames: this.anims.generateFrameNumbers('woodcutter_hurt', {
+                        start: 0,
+                        end: 2
+                    }),
+                    frameRate: 10,
+                    repeat: 0
+                });
+                this.anims.create({
+                    key: 'woodcutter_attack_key',
+                    frames: this.anims.generateFrameNumbers('woodcutter_attack', {
+                        start: 0,
+                        end: 5
+                    }),
+                    frameRate: 12,
+                    repeat: 0
+                });
+                this.anims.create({
+                    key: 'woodcutter_death_key',
+                    frames: this.anims.generateFrameNumbers('woodcutter_death', {
+                        start: 0,
+                        end: 5
+                    }),
+                    frameRate: 8,
+                    repeat: 0
+                });
+                this.anims.create({
+                    key: 'tank_treads_roll',
+                    frames: this.anims.generateFrameNumbers('boss_tank_body', {
+                        start: 0,
+                        end: 2
+                    }),
+                    frameRate: 8,
+                    repeat: -1
+                });
+
+                projectiles = this.physics.add.group();
+                enemies = this.physics.add.group();
+                this.physics.add.collider(enemies, platforms);
+                this.physics.add.overlap(projectiles, enemies, this.hitThreatRanged, null, this);
+                this.physics.add.overlap(player, enemies, this.hurtPlayer, null, this);
 
                 this.cursors = this.input.keyboard.createCursorKeys();
                 this.keys = this.input.keyboard.addKeys({
-                    shift: Phaser.Input.Keyboard.KeyCodes.ALT, attack: Phaser.Input.Keyboard.KeyCodes.F, super: Phaser.Input.Keyboard.KeyCodes.Q,
-                    W: Phaser.Input.Keyboard.KeyCodes.W, A: Phaser.Input.Keyboard.KeyCodes.A, D: Phaser.Input.Keyboard.KeyCodes.D
+                    shift: Phaser.Input.Keyboard.KeyCodes.ALT,
+                    attack: Phaser.Input.Keyboard.KeyCodes.F,
+                    super: Phaser.Input.Keyboard.KeyCodes.Q,
+                    W: Phaser.Input.Keyboard.KeyCodes.W,
+                    A: Phaser.Input.Keyboard.KeyCodes.A,
+                    D: Phaser.Input.Keyboard.KeyCodes.D
                 });
 
-                uiText = this.add.text(20, 20, '', { fontSize: '18px', fill: '#ffffff', fontStyle: 'bold' });
-                promptText = this.add.text(20, 520, 'ALT: Switch Form (3s CD) | F: Attack | Q: Nature\'s Wrath', { fontSize: '13px', fill: '#81c784' });
-                
+                uiText = this.add.text(20, 20, '', {
+                    fontSize: '18px',
+                    fill: '#ffffff',
+                    fontStyle: 'bold'
+                });
+                promptText = this.add.text(20, 520, 'ALT: Switch Form (3s CD) | F: Attack | Q: Nature\'s Wrath', {
+                    fontSize: '13px',
+                    fill: '#81c784'
+                });
+
                 this.updateUI();
                 this.displayWaveBanner("WAVE 1", "#ffffff");
                 this.time.delayedCall(2500, () => {
@@ -389,40 +877,74 @@
                 });
             }
 
-            // 🛠️ ACTIVE AUDIO CACHE GUARD: Protects compilation thread from 404 mismatch shutdowns
+            // 🔊 Helper function to safely play sounds
             playSound(key, volume = 0.5) {
-                if (this.cache.audio.exists(key)) {
-                    try { this.sound.play(key, { volume: volume }); } catch(e) {}
-                }
+                try {
+                    this.sound.play(key, {
+                        volume: volume
+                    });
+                } catch (e) {}
             }
 
             bindMobileNavigationDOM() {
                 const attachNode = (id, startFunc, endFunc) => {
                     const node = document.getElementById(id);
                     if (!node) return;
-                    node.addEventListener('touchstart', (e) => { e.preventDefault(); startFunc(); });
+                    node.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        startFunc();
+                    });
                     if (endFunc) {
-                        node.addEventListener('touchend', (e) => { e.preventDefault(); endFunc(); });
-                        node.addEventListener('touchcancel', (e) => { e.preventDefault(); endFunc(); });
+                        node.addEventListener('touchend', (e) => {
+                            e.preventDefault();
+                            endFunc();
+                        });
+                        node.addEventListener('touchcancel', (e) => {
+                            e.preventDefault();
+                            endFunc();
+                        });
                     }
                 };
-                attachNode('btn-left', () => { moveLeft = true; }, () => { moveLeft = false; });
-                attachNode('btn-right', () => { moveRight = true; }, () => { moveRight = false; });
-                attachNode('btn-jump', () => { if (player && player.body && player.body.touching.down) player.body.setVelocityY(-620); });
-                attachNode('btn-attack', () => { this.processAttack(this); });
-                attachNode('btn-shift', () => { this.handleFormShift(); });
-                attachNode('btn-super', () => { if (wrath >= 100) this.triggerVolcanicWrath(this); });
+                attachNode('btn-left', () => {
+                    moveLeft = true;
+                }, () => {
+                    moveLeft = false;
+                });
+                attachNode('btn-right', () => {
+                    moveRight = true;
+                }, () => {
+                    moveRight = false;
+                });
+                attachNode('btn-jump', () => {
+                    if (player && player.body && player.body.touching.down) {
+                        player.body.setVelocityY(-620);
+                    }
+                });
+                attachNode('btn-attack', () => {
+                    this.processAttack(this);
+                });
+                attachNode('btn-shift', () => {
+                    this.handleFormShift();
+                });
+                attachNode('btn-super', () => {
+                    if (wrath >= 100) this.triggerVolcanicWrath(this);
+                });
             }
 
             update() {
                 if (!player || !player.body) return;
-                if (isDead || isShifting || isAttacking) { player.body.setVelocityX(0); return; }
+                if (isDead || isShifting || isAttacking) {
+                    player.body.setVelocityX(0);
+                    return;
+                }
 
                 if (this.cursors.left.isDown || this.keys.A.isDown || moveLeft) {
-                    player.body.setVelocityX(-240); player.flipX = true;
+                    player.body.setVelocityX(-240);
+                    player.flipX = true;
                     if (player.body.touching.down) player.anims.play(currentForm === 'diwata' ? 'diwata_walk' : 'ermitanyo_walk', true);
                 } else if (this.cursors.right.isDown || this.keys.D.isDown || moveRight) {
-                    player.body.setVelocityX(240); player.flipX = false;
+                    player.body.setVelocityX(240);
+                    player.flipX = false;
                     if (player.body.touching.down) player.anims.play(currentForm === 'diwata' ? 'diwata_walk' : 'ermitanyo_walk', true);
                 } else {
                     player.body.setVelocityX(0);
@@ -435,7 +957,10 @@
                     player.body.setSize(32, 50, false).setOffset(player.flipX ? 48 : 48, 74);
                 }
 
-                if ((this.cursors.up.isDown || this.keys.W.isDown) && player.body.touching.down) player.body.setVelocityY(-620);
+                if ((this.cursors.up.isDown || this.keys.W.isDown) && player.body.touching.down) {
+                    player.body.setVelocityY(-620);
+                }
+
                 if (!player.body.touching.down) player.anims.play(currentForm === 'diwata' ? 'diwata_idle' : 'ermitanyo_idle', true);
 
                 if (Phaser.Input.Keyboard.JustDown(this.keys.shift)) this.handleFormShift();
@@ -447,86 +972,215 @@
             }
 
             handleFormShift() {
-                if (!canTransform || isShifting || isDead) { uiText.setTint(0xffd54f); this.time.delayedCall(150, () => uiText.clearTint()); return; }
-                isShifting = true; canTransform = false; shiftCooldownTimer = 3.0; player.body.setVelocity(0, 0);
+                if (!canTransform || isShifting || isDead) {
+                    uiText.setTint(0xffd54f);
+                    this.time.delayedCall(150, () => uiText.clearTint());
+                    return;
+                }
+                isShifting = true;
+                canTransform = false;
+                shiftCooldownTimer = 3.0;
+                player.body.setVelocity(0, 0);
 
-                this.time.addEvent({ delay: 100, callback: () => { shiftCooldownTimer = Math.max(0, shiftCooldownTimer - 0.1); this.updateUI(); if (shiftCooldownTimer <= 0) canTransform = true; }, repeat: 29 });
-                
+                this.time.addEvent({
+                    delay: 100,
+                    callback: () => {
+                        shiftCooldownTimer = Math.max(0, shiftCooldownTimer - 0.1);
+                        this.updateUI();
+                        if (shiftCooldownTimer <= 0) canTransform = true;
+                    },
+                    repeat: 29
+                });
+
                 let burstX = player.x + (currentForm === 'diwata' ? (player.flipX ? 12 : -15) : (player.flipX ? 10 : -10));
                 let burstY = player.y - (currentForm === 'diwata' ? 15 : -1);
                 let magicBurst = this.add.sprite(burstX, burstY, 'fx_sheet').setScale(4).setDepth(10);
                 magicBurst.anims.play('trans_burst');
 
                 if (currentForm === 'diwata') {
-                    currentForm = 'ermitanyo'; player.setTexture('ermitanyo_idle_sheet').setScale(1.10);
+                    currentForm = 'ermitanyo';
+                    player.setTexture('ermitanyo_idle_sheet').setScale(1.10);
                     player.body.setSize(32, 50, false).setOffset(player.flipX ? 38 : 48, 74);
-                    player.x += player.flipX ? 12 : -12; player.y -= 15; player.anims.play('ermitanyo_idle', true);
+                    player.x += player.flipX ? 12 : -12;
+                    player.y -= 15;
+                    player.anims.play('ermitanyo_idle', true);
                 } else {
-                    currentForm = 'diwata'; player.setTexture('diwata_idle_sheet').setScale(2);
+                    currentForm = 'diwata';
+                    player.setTexture('diwata_idle_sheet').setScale(2);
                     player.body.setSize(18, 44, false).setOffset(player.flipX ? 15 : 15, 4);
-                    player.x += player.flipX ? -12 : 12; player.y -= 14; player.anims.play('diwata_idle', true);
+                    player.x += player.flipX ? -12 : 12;
+                    player.y -= 14;
+                    player.anims.play('diwata_idle', true);
                 }
-                this.physics.add.collider(player, platforms); this.updateUI();
-                magicBurst.once('animationcomplete-trans_burst', () => { magicBurst.destroy(); isShifting = false; });
+                this.physics.add.collider(player, platforms);
+                this.updateUI();
+                magicBurst.once('animationcomplete-trans_burst', () => {
+                    magicBurst.destroy();
+                    isShifting = false;
+                });
             }
 
             spawnEnemy(x, y, type) {
                 let textureMap = {
-                    'graverobber': { idle: 'graverobber_walk', speed: -80, scale: 2.0, hp: 30, sizeX: 20, sizeY: 40, offX: 14, offY: 8, anim: 'graverobber_walk_key' },
-                    'orc': { idle: 'orc_walk', speed: -50, scale: 1.2, hp: 50, sizeX: 40, sizeY: 60, offX: 28, offY: 36, anim: 'orc_walk_key' },
-                    'orc2': { idle: 'orc2_walk', speed: -45, scale: 1.2, hp: 65, sizeX: 40, sizeY: 60, offX: 28, offY: 36, anim: 'orc2_walk_key' },
-                    'wolf': { idle: 'wolf_walk', speed: -90, scale: 1.0, hp: 40, sizeX: 70, sizeY: 50, offX: 29, offY: 78, anim: 'wolf_walk_key' },
-                    'woodcutter': { idle: 'woodcutter_walk', speed: -50, scale: 2.0, hp: 35, sizeX: 20, sizeY: 40, offX: 14, offY: 8, anim: 'woodcutter_walk_key' }
+                    'graverobber': {
+                        idle: 'graverobber_walk',
+                        speed: -80,
+                        scale: 2.0,
+                        hp: 30,
+                        sizeX: 20,
+                        sizeY: 40,
+                        offX: 14,
+                        offY: 8,
+                        anim: 'graverobber_walk_key'
+                    },
+                    'orc': {
+                        idle: 'orc_walk',
+                        speed: -50,
+                        scale: 1.2,
+                        hp: 50,
+                        sizeX: 40,
+                        sizeY: 60,
+                        offX: 28,
+                        offY: 36,
+                        anim: 'orc_walk_key'
+                    },
+                    'orc2': {
+                        idle: 'orc2_walk',
+                        speed: -45,
+                        scale: 1.2,
+                        hp: 65,
+                        sizeX: 40,
+                        sizeY: 60,
+                        offX: 28,
+                        offY: 36,
+                        anim: 'orc2_walk_key'
+                    },
+                    'wolf': {
+                        idle: 'wolf_walk',
+                        speed: -90,
+                        scale: 1.0,
+                        hp: 40,
+                        sizeX: 70,
+                        sizeY: 50,
+                        offX: 29,
+                        offY: 78,
+                        anim: 'wolf_walk_key'
+                    },
+                    'woodcutter': {
+                        idle: 'woodcutter_walk',
+                        speed: -50,
+                        scale: 2.0,
+                        hp: 35,
+                        sizeX: 20,
+                        sizeY: 40,
+                        offX: 14,
+                        offY: 8,
+                        anim: 'woodcutter_walk_key'
+                    }
                 };
                 let data = textureMap[type];
                 let e = enemies.create(x, y, data.idle).setCollideWorldBounds(true).setScale(data.scale);
                 e.body.setVelocityX(data.speed);
-                e.health = (currentWave === 2) ? Math.floor(data.hp * 1.5) : data.hp; e.typeId = type; e.patrolSpeed = Math.abs(data.speed); e.isHurt = false;
+                e.health = (currentWave === 2) ? Math.floor(data.hp * 1.5) : data.hp;
+                e.typeId = type;
+                e.patrolSpeed = Math.abs(data.speed);
+                e.isHurt = false;
                 e.body.setSize(data.sizeX, data.sizeY, false).setOffset(data.offX, data.offY);
-                e.anims.play(data.anim, true); e.flipX = true;
+                e.anims.play(data.anim, true);
+                e.flipX = true;
             }
 
             processPatrols() {
                 enemies.children.iterate((enemy) => {
                     if (!enemy || !enemy.body || enemy.isHurt) return;
-                    let aiConfig = { 'graverobber': { range: 350, speedMod: 1.2 }, 'orc': { range: 250, speedMod: 1.1 }, 'orc2': { range: 200, speedMod: 1.0 }, 'wolf': { range: 400, speedMod: 1.3 }, 'woodcutter': { range: 300, speedMod: 1.1 } };
-                    let stats = aiConfig[enemy.typeId] || { range: 300, speedMod: 1.0 };
+                    let aiConfig = {
+                        'graverobber': {
+                            range: 350,
+                            speedMod: 1.2
+                        },
+                        'orc': {
+                            range: 250,
+                            speedMod: 1.1
+                        },
+                        'orc2': {
+                            range: 200,
+                            speedMod: 1.0
+                        },
+                        'wolf': {
+                            range: 400,
+                            speedMod: 1.3
+                        },
+                        'woodcutter': {
+                            range: 300,
+                            speedMod: 1.1
+                        }
+                    };
+                    let stats = aiConfig[enemy.typeId] || {
+                        range: 300,
+                        speedMod: 1.0
+                    };
                     let distanceToPlayer = Phaser.Math.Distance.Between(enemy.x, enemy.y, player.x, player.y);
                     if (distanceToPlayer <= stats.range && !isDead && Math.abs(player.y - enemy.y) < 160) {
-                        if (player.x < enemy.x) { enemy.body.setVelocityX(-enemy.patrolSpeed * stats.speedMod); enemy.flipX = true; }
-                        else { enemy.body.setVelocityX(enemy.patrolSpeed * stats.speedMod); enemy.flipX = false; }
+                        if (player.x < enemy.x) {
+                            enemy.body.setVelocityX(-enemy.patrolSpeed * stats.speedMod);
+                            enemy.flipX = true;
+                        } else {
+                            enemy.body.setVelocityX(enemy.patrolSpeed * stats.speedMod);
+                            enemy.flipX = false;
+                        }
                         return;
                     }
-                    if (enemy.body.blocked.left || enemy.body.touching.left) { enemy.body.setVelocityX(enemy.patrolSpeed); enemy.flipX = false; }
-                    else if (enemy.body.blocked.right || enemy.body.touching.right) { enemy.body.setVelocityX(-enemy.patrolSpeed); enemy.flipX = true; }
+                    if (enemy.body.blocked.left || enemy.body.touching.left) {
+                        enemy.body.setVelocityX(enemy.patrolSpeed);
+                        enemy.flipX = false;
+                    } else if (enemy.body.blocked.right || enemy.body.touching.right) {
+                        enemy.body.setVelocityX(-enemy.patrolSpeed);
+                        enemy.flipX = true;
+                    }
                 });
             }
 
             spawnBossTank(x, y) {
-                bossActive = true; tankProjectiles = this.physics.add.group();
+                bossActive = true;
+                tankProjectiles = this.physics.add.group();
                 bossBody = this.physics.add.sprite(x, y, 'boss_tank_body').setScale(3.5);
                 bossBody.setCollideWorldBounds(true).body.setSize(70, 36, false).setOffset(5, 12);
-                bossBody.health = bossHealth; bossBody.patrolSpeed = 40; bossBody.body.setVelocityX(-40);
+                bossBody.health = bossHealth;
+                bossBody.patrolSpeed = 40;
+                bossBody.body.setVelocityX(-40);
                 bossBody.anims.play('tank_treads_roll');
                 this.physics.add.collider(bossBody, platforms);
                 this.physics.add.overlap(projectiles, bossBody, this.damageBoss, null, this);
                 this.physics.add.overlap(player, bossBody, this.hurtPlayer, null, this);
                 this.physics.add.overlap(tankProjectiles, player, this.shellHitPlayer, null, this);
                 this.createBossHealthBar();
-                this.bossWeaponTimer = this.time.addEvent({ delay: 2500, callback: this.bossFireCannon, callbackScope: this, loop: true });
+                this.bossWeaponTimer = this.time.addEvent({
+                    delay: 2500,
+                    callback: this.bossFireCannon,
+                    callbackScope: this,
+                    loop: true
+                });
             }
 
             updateBossPosition() {
                 if (!bossActive || !bossBody.active) return;
-                if (bossBody.body.blocked.left || bossBody.body.touching.left) { bossBody.body.setVelocityX(bossBody.patrolSpeed); bossBody.flipX = true; }
-                else if (bossBody.body.blocked.right || bossBody.body.touching.right) { bossBody.body.setVelocityX(-bossBody.patrolSpeed); bossBody.flipX = false; }
+                if (bossBody.body.blocked.left || bossBody.body.touching.left) {
+                    bossBody.body.setVelocityX(bossBody.patrolSpeed);
+                    bossBody.flipX = true;
+                } else if (bossBody.body.blocked.right || bossBody.body.touching.right) {
+                    bossBody.body.setVelocityX(-bossBody.patrolSpeed);
+                    bossBody.flipX = false;
+                }
             }
 
             bossFireCannon() {
                 if (!bossActive || !bossBody.active || isDead) return;
                 let shell = tankProjectiles.create(bossBody.x + (bossBody.flipX ? 50 : -50), bossBody.y, 'tank_shell');
-                shell.body.allowGravity = true; shell.setScale(2.5).body.setCircle(8);
+                shell.body.allowGravity = true;
+                shell.setScale(2.5).body.setCircle(8);
                 shell.body.setVelocity((player.x - shell.x) * 1.3, -280);
+
+                // 🔊 Tank Shoot
                 this.playSound('snd_tank_shot', 0.6);
             }
 
@@ -536,141 +1190,216 @@
                 let actualBoss = (secondArg && secondArg.texture && secondArg.texture.key === 'boss_tank_body') ? secondArg : firstArg;
                 if (proj && proj.active) proj.destroy();
                 if (!actualBoss || !actualBoss.active) return;
-                
-                bossCanTakeDamage = false; bossHealth = Math.max(0, bossHealth - 10);
+
+                bossCanTakeDamage = false;
+                bossHealth = Math.max(0, bossHealth - 10);
                 actualBoss.setTint(0xff5252);
                 this.playSound('snd_hurt', 0.5);
 
-                this.time.delayedCall(200, () => { if (actualBoss.active) actualBoss.clearTint(); bossCanTakeDamage = true; });
+                this.time.delayedCall(200, () => {
+                    if (actualBoss.active) actualBoss.clearTint();
+                    bossCanTakeDamage = true;
+                });
                 this.drawBossHealthBar();
-                
+
                 if (bossHealth <= 0) {
-                    bossActive = false; bossBody.body.setVelocity(0, 0).enable = false;
-                    if (this.bossWeaponTimer) this.bossWeaponTimer.destroy(); bossUIContainer.destroy();
+                    bossActive = false;
+                    bossBody.body.setVelocity(0, 0).enable = false;
+                    if (this.bossWeaponTimer) this.bossWeaponTimer.destroy();
+                    bossUIContainer.destroy();
                     this.cameras.main.shake(1500, 0.05);
+
+                    // 🔊 Boss Death Explosion
                     this.playSound('snd_boss_die', 0.8);
-                    
+
                     this.displayWaveBanner("VICTORY! MOUNT ARAYAT IS SAVED", "#a7ffeb");
-                    this.time.delayedCall(3500, () => { 
-                        bossBody.destroy(); 
+                    this.time.delayedCall(3500, () => {
+                        bossBody.destroy();
                         if (bgMusic) bgMusic.stop();
-                        this.scene.start('TitleScene'); 
+                        this.scene.start('TitleScene');
                     });
                 }
             }
 
-            shellHitPlayer(playerRef, shellRef) { if (shellRef && shellRef.active) shellRef.destroy(); this.hurtPlayer(playerRef, bossBody); }
+            shellHitPlayer(playerRef, shellRef) {
+                if (shellRef && shellRef.active) shellRef.destroy();
+                this.hurtPlayer(playerRef, bossBody);
+            }
 
             createBossHealthBar() {
                 bossUIContainer = this.add.container(0, 95);
                 let bg = this.add.rectangle(512, 40, 600, 20, 0x222222).setOrigin(0.5);
                 let border = this.add.rectangle(512, 40, 604, 24).setOrigin(0.5).setStrokeStyle(2, 0x00ff40);
-                let label = this.add.text(512, 18, "ANTI-FOREST COMBAT EXCAVATOR TANK", { fontSize: '12px', fill: '#00ff40', fontStyle: 'bold' }).setOrigin(0.5);
-                bossUIContainer.add([bg, border, label]); this.drawBossHealthBar();
+                let label = this.add.text(512, 18, "ANTI-FOREST COMBAT EXCAVATOR TANK", {
+                    fontSize: '12px',
+                    fill: '#00ff40',
+                    fontStyle: 'bold'
+                }).setOrigin(0.5);
+                bossUIContainer.add([bg, border, label]);
+                this.drawBossHealthBar();
             }
 
             drawBossHealthBar() {
-                if (!bossActive) return; if (bossFillBar) bossFillBar.destroy();
+                if (!bossActive) return;
+                if (bossFillBar) bossFillBar.destroy();
                 bossFillBar = this.add.rectangle(214, 40, (bossHealth / bossMaxHealth) * 596, 16, 0xff1744).setOrigin(0, 0.5);
                 bossUIContainer.add(bossFillBar);
             }
 
             processAttack(scene) {
                 if (isAttacking || isShifting || isDead) return;
-                isAttacking = true; let direction = player.flipX ? -1 : 1;
-                
+                isAttacking = true;
+                let direction = player.flipX ? -1 : 1;
+
                 if (currentForm === 'diwata') {
+                    // 🔊 Diwata Blaster Sound
                     this.playSound('snd_diwata_atk', 0.5);
+
                     player.anims.play('diwata_attack', true);
                     let burst = projectiles.create(player.x + (30 * direction), player.y, 'projectile_sheet');
                     if (burst && burst.body) {
-                        burst.body.allowGravity = false; burst.flipX = player.flipX;
+                        burst.body.allowGravity = false;
+                        burst.flipX = player.flipX;
                         burst.anims.play('magic_spin', true).body.setVelocityX(600 * direction);
                     }
-                    scene.time.delayedCall(1200, () => { if (burst && burst.active) burst.destroy(); });
-                    scene.time.delayedCall(350, () => { isAttacking = false; });
+                    scene.time.delayedCall(1200, () => {
+                        if (burst && burst.active) burst.destroy();
+                    });
+                    scene.time.delayedCall(350, () => {
+                        isAttacking = false;
+                    });
                 } else {
+                    // 🔊 Ermitanyo Punch Sound
                     this.playSound('snd_ermitanyo_atk', 0.5);
+
                     player.anims.play('ermitanyo_attack', true);
                     let staffHitbox = scene.add.rectangle(player.x + (40 * direction), player.y, 60, 40, 0x8d6e63, 0);
-                    scene.physics.add.existing(staffHitbox); staffHitbox.body.allowGravity = false;
-                    scene.physics.add.overlap(staffHitbox, enemies, (box, enemy) => { this.strikeMelee(enemy, 20, direction, scene); });
+                    scene.physics.add.existing(staffHitbox);
+                    staffHitbox.body.allowGravity = false;
+                    scene.physics.add.overlap(staffHitbox, enemies, (box, enemy) => {
+                        this.strikeMelee(enemy, 20, direction, scene);
+                    });
                     if (bossActive && bossBody && bossBody.active) {
-                        scene.physics.add.overlap(staffHitbox, bossBody, (box, boss) => { this.damageBoss(boss, null); });
+                        scene.physics.add.overlap(staffHitbox, bossBody, (box, boss) => {
+                            this.damageBoss(boss, null);
+                        });
                     }
-                    player.once('animationcomplete-ermitanyo_attack', () => { staffHitbox.destroy(); isAttacking = false; });
+                    player.once('animationcomplete-ermitanyo_attack', () => {
+                        staffHitbox.destroy();
+                        isAttacking = false;
+                    });
                 }
             }
 
             hurtPlayer(playerRef, enemyRef) {
                 if (isDead || isAttacking || isShifting || enemyRef.health <= 0) return;
-                isAttacking = true; playerHealth = Math.max(0, playerHealth - 15); this.updateUI();
+                isAttacking = true;
+                playerHealth = Math.max(0, playerHealth - 15);
+                this.updateUI();
+
+                // 🔊 Player Damage Sound
                 this.playSound('snd_hurt', 0.5);
 
                 if (enemyRef !== bossBody) {
                     enemyRef.isHurt = true;
                     enemyRef.body.setVelocityX(0);
                     enemyRef.anims.play(`${enemyRef.typeId}_attack_key`, true);
-                    
+
                     enemyRef.once('animationcomplete', () => {
                         enemyRef.isHurt = false;
                         if (enemyRef.active && enemyRef.health > 0) enemyRef.body.setVelocityX(enemyRef.flipX ? enemyRef.patrolSpeed : -enemyRef.patrolSpeed);
                     });
                 }
-                
+
                 let knockbackDir = enemyRef.x > playerRef.x ? -200 : 200;
                 playerRef.body.setVelocityX(knockbackDir);
                 playerRef.body.setVelocityY(-200);
 
                 playerRef.anims.play(currentForm === 'diwata' ? 'diwata_hurt' : 'ermitanyo_hurt', true).setTint(0xff5252);
                 playerRef.once(currentForm === 'diwata' ? 'animationcomplete-diwata_hurt' : 'animationcomplete-ermitanyo_hurt', () => {
-                    playerRef.clearTint(); isAttacking = false; if (playerHealth <= 0) this.triggerPlayerDeath();
+                    playerRef.clearTint();
+                    isAttacking = false;
+                    if (playerHealth <= 0) this.triggerPlayerDeath();
                 });
             }
 
             triggerPlayerDeath() {
-                isDead = true; player.body.setVelocity(0, 0);
+                isDead = true;
+                player.body.setVelocity(0, 0);
+
+                // 🔊 Player Death Sound
                 this.playSound('snd_die', 0.6);
+
                 player.anims.play(currentForm === 'diwata' ? 'diwata_death' : 'ermitanyo_death', true);
                 if (bgMusic) bgMusic.stop();
-                this.time.delayedCall(4000, () => { this.scene.start('TitleScene'); });
+                this.time.delayedCall(4000, () => {
+                    this.scene.start('TitleScene');
+                });
             }
 
-            hitThreatRanged(projectile, enemy) { if (projectile && projectile.active) projectile.destroy(); this.applyDamage(enemy, 10, this); }
-            strikeMelee(enemy, amount, dir, scene) { enemy.body.setVelocityX(dir * 250); enemy.body.setVelocityY(-120); this.applyDamage(enemy, amount, scene); }
+            hitThreatRanged(projectile, enemy) {
+                if (projectile && projectile.active) projectile.destroy();
+                this.applyDamage(enemy, 10, this);
+            }
+            strikeMelee(enemy, amount, dir, scene) {
+                enemy.body.setVelocityX(dir * 250);
+                enemy.body.setVelocityY(-120);
+                this.applyDamage(enemy, amount, scene);
+            }
 
             applyDamage(enemy, amount, scene) {
-                if (enemy.health <= 0) return; enemy.health -= amount; enemy.setTint(0xff5252);
+                if (enemy.health <= 0) return;
+                enemy.health -= amount;
+                enemy.setTint(0xff5252);
+
+                // 🔊 Enemy Hit Sound
                 this.playSound('snd_hurt', 0.3);
 
-                scene.time.delayedCall(100, () => { if (enemy.active && enemy.health > 0) enemy.clearTint(); });
-                if (wrath < 100) { wrath = Math.min(100, wrath + 3); this.updateUI(); }
-                
-                if (enemy.health <= 0) {
-                    totalKills++; if (currentWave === 2) wave2Kills++;
-                    wrath = Math.min(100, wrath + 6); this.updateUI();
-                    
-                    let enemyType = enemy.typeId;
-                    
-                    enemy.isHurt = true; 
-                    enemy.body.setVelocityX(0);
-                    enemy.body.setVelocityY(0);
-                    enemy.body.enable = false;
-                    
-                    this.playSound('snd_die');
+                scene.time.delayedCall(100, () => {
+                    if (enemy.active && enemy.health > 0) enemy.clearTint();
+                });
+                if (wrath < 100) {
+                    wrath = Math.min(100, wrath + 3);
+                    this.updateUI();
+                }
 
-                    enemy.anims.play(`${enemyType}_death_key`, true).once('animationcomplete', () => {
+                if (enemy.health <= 0) {
+                    totalKills++;
+                    if (currentWave === 2) wave2Kills++;
+                    wrath = Math.min(100, wrath + 6);
+                    this.updateUI();
+                    enemy.isHurt = true;
+                    enemy.body.setVelocity(0, 0).enable = false;
+
+                    // 🔊 Enemy Death Sound
+                    this.playSound('snd_die', 0.5);
+
+                    enemy.anims.play(`${enemy.typeId}_death_key`, true).once('animationcomplete', () => {
                         enemy.destroy();
                         if (currentWave === 1 && totalKills >= KILLS_TO_ADVANCE_WAVE_2) {
-                            currentWave = 2; this.updateUI(); this.displayWaveBanner("WAVE 2: REBELS EMPOWERED", "#ffd54f");
-                            scene.time.delayedCall(2500, () => { if (currentWave === 2) { this.spawnEnemy(150, 300, 'wolf'); this.spawnEnemy(874, 300, 'woodcutter'); this.spawnEnemy(350, 160, 'orc'); this.spawnEnemy(674, 160, 'graverobber'); this.spawnEnemy(512, 450, 'orc2'); } });
+                            currentWave = 2;
+                            this.updateUI();
+                            this.displayWaveBanner("WAVE 2: REBELS EMPOWERED", "#ffd54f");
+                            scene.time.delayedCall(2500, () => {
+                                if (currentWave === 2) {
+                                    this.spawnEnemy(150, 300, 'wolf');
+                                    this.spawnEnemy(874, 300, 'woodcutter');
+                                    this.spawnEnemy(350, 160, 'orc');
+                                    this.spawnEnemy(674, 160, 'graverobber');
+                                    this.spawnEnemy(512, 450, 'orc2');
+                                }
+                            });
                         } else if (currentWave === 2 && wave2Kills >= KILLS_TO_ADVANCE_BOSS) {
-                            currentWave = 3; this.updateUI(); enemies.clear(true, true);
+                            currentWave = 3;
+                            this.updateUI();
+                            enemies.clear(true, true);
                             this.displayWaveBanner("FINAL BOSS ENCOUNTER", "#ff1744");
-                            scene.time.delayedCall(2500, () => { this.spawnBossTank(512, 400); });
+                            scene.time.delayedCall(2500, () => {
+                                this.spawnBossTank(512, 400);
+                            });
                         } else if (currentWave < 3) {
-                            scene.time.delayedCall(2500, () => { 
-                                if (currentWave === 1 || (currentWave === 2 && wave2Kills < KILLS_TO_ADVANCE_BOSS)) this.spawnEnemy(Phaser.Math.Between(200, 900), 100, enemyType); 
+                            scene.time.delayedCall(2500, () => {
+                                if (currentWave === 1 || (currentWave === 2 && wave2Kills < KILLS_TO_ADVANCE_BOSS)) this.spawnEnemy(Phaser.Math.Between(200, 900), 100, enemy.typeId);
                             });
                         }
                     });
@@ -678,15 +1407,42 @@
             }
 
             displayWaveBanner(message, colorHex) {
-                let banner = this.add.text(512, 250, message, { fontSize: '42px', fill: colorHex, fontStyle: 'bold', fontFamily: 'Courier New', stroke: '#000000', strokeThickness: 6 }).setOrigin(0.5).setDepth(20);
-                this.tweens.add({ targets: banner, alpha: { start: 1, to: 0 }, scale: { start: 0.8, to: 1.1 }, duration: 2500, ease: 'Linear', onComplete: () => banner.destroy() });
+                let banner = this.add.text(512, 250, message, {
+                    fontSize: '42px',
+                    fill: colorHex,
+                    fontStyle: 'bold',
+                    fontFamily: 'Courier New',
+                    stroke: '#000000',
+                    strokeThickness: 6
+                }).setOrigin(0.5).setDepth(20);
+                this.tweens.add({
+                    targets: banner,
+                    alpha: {
+                        start: 1,
+                        to: 0
+                    },
+                    scale: {
+                        start: 0.8,
+                        to: 1.1
+                    },
+                    duration: 2500,
+                    ease: 'Linear',
+                    onComplete: () => banner.destroy()
+                });
             }
 
             triggerVolcanicWrath(scene) {
-                wrath = 0; this.updateUI(); scene.cameras.main.shake(1200, 0.04);
+                wrath = 0;
+                this.updateUI();
+                scene.cameras.main.shake(1200, 0.04);
                 let eruptionOverlay = scene.add.rectangle(512, 288, 1024, 576, 0xff3d00, 0.7);
-                scene.time.delayedCall(400, () => { eruptionOverlay.destroy(); });
-                enemies.children.iterate((enemy) => { if (enemy) this.applyDamage(enemy, 60, scene); });
+                scene.time.delayedCall(400, () => {
+                    eruptionOverlay.destroy();
+                });
+                enemies.children.iterate((enemy) => {
+                    if (enemy) this.applyDamage(enemy, 60, scene);
+                });
+
                 if (bossActive && bossBody && bossBody.active) this.damageBoss(bossBody, null);
             }
 
@@ -702,6 +1458,7 @@
             }
         }
 
+        // --- 4. ENGINE BOOT INVOCATION ---
         config.scene = [TitleScene, GameScene];
         const game = new Phaser.Game(config);
     </script>

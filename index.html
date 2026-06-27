@@ -7,15 +7,17 @@
     <title>Maria Sinukuan: Vengeance of Arayat</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
     <style>
-    body {
+    <style>
+    /* 1. FORCE ROOT ELEMENTS TO RESPECT THE REAL VISIBLE AREA */
+    html, body {
         margin: 0;
         padding: 0;
+        width: 100%;
+        height: 100%; /* Tracks the exact inner space below the URL bar */
         background-color: #111411;
         display: flex;
         justify-content: center;
         align-items: center;
-        height: 100vh;
-        width: 100vw;
         font-family: 'Courier New', Courier, monospace;
         overflow: hidden;
         touch-action: none;
@@ -24,20 +26,43 @@
         user-select: none;
     }
     
-    /* 🧩 THE FLEXIBLE WRAPPER: Matches a clean 16:9 widescreen ratio dynamically */
+    /* 2. BOUND THE WRAPPER BY ACTUAL AVAILABLE PERCENTAGES */
     #game-container {
         position: relative;
         box-shadow: 0px 0px 25px rgba(0, 255, 64, 0.2);
         border: 4px solid #1b5e20;
-        /* Dynamic viewport matching */
-        width: 100vw;
-        height: 56.25vw; /* 16:9 Aspect Ratio calculation (576 / 1024) */
-        max-width: 177.78vh; /* 16:9 Aspect Ratio calculation (1024 / 576) */
-        max-height: 100vh;
         box-sizing: border-box;
+        aspect-ratio: 16 / 9;
+
+        /* Fluid sizing based on the parent body container */
+        width: 100%;
+        height: auto;
+        
+        /* Prevents the game from ever spilling past the active visible screen */
+        max-height: 100%; 
+        max-width: calc(100% * 16 / 9);
     }
 
-    /* Force the canvas to obey the fluid container boundary */
+    /* 3. PORTRAIT MATRIX: Swaps calculations safely within the visible window box */
+    @media screen and (max-width: 1024px) and (orientation: portrait) {
+        #game-container {
+            position: absolute !important;
+            top: 50% !important;
+            left: 50% !important;
+            aspect-ratio: 16 / 9;
+            
+            height: 100% !important;   
+            width: calc(100% * 16 / 9) !important;  
+            
+            /* Dynamic percentage clamps so the rotated box cannot clip on portrait URL heights */
+            max-width: 100% !important;
+            max-height: calc(100% * 9 / 16) !important;
+            
+            transform: translate(-50%, -50%) rotate(90deg) !important;
+            transform-origin: center center !important;
+        }
+    }
+
     canvas {
         display: block;
         width: 100% !important;
@@ -45,7 +70,7 @@
         object-fit: contain;
     }
 
-    /* 📱 ACCURATE MOBILE OVERLAY: Locked precisely to the game canvas coordinate grid */
+    /* MOBILE BUTTONS CONTROLLER LAYER */
     .mobile-ui-layer {
         display: none;
         position: absolute;

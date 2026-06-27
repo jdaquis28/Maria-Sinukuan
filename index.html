@@ -7,13 +7,13 @@
     <title>Maria Sinukuan: Vengeance of Arayat</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
     <style>
-    <style>
-    /* 1. FORCE ROOT ELEMENTS TO RESPECT THE REAL VISIBLE AREA */
+ <style>
     html, body {
         margin: 0;
         padding: 0;
-        width: 100%;
-        height: 100%; /* Tracks the exact inner space below the URL bar */
+        /* Force the root frame to lock onto the strict visible screen bounds */
+        width: 100svw;
+        height: 100svh;
         background-color: #111411;
         display: flex;
         justify-content: center;
@@ -26,24 +26,27 @@
         user-select: none;
     }
     
-    /* 2. BOUND THE WRAPPER BY ACTUAL AVAILABLE PERCENTAGES */
+    /* 🧩 THE CLAMPED VIEWPORT ENGINE */
     #game-container {
         position: relative;
         box-shadow: 0px 0px 25px rgba(0, 255, 64, 0.2);
         border: 4px solid #1b5e20;
         box-sizing: border-box;
+        
+        /* Enforce a rigid aspect ratio box */
         aspect-ratio: 16 / 9;
-
-        /* Fluid sizing based on the parent body container */
-        width: 100%;
+        
+        /* Default: Try to fill the screen widthwise */
+        width: 100svw;
         height: auto;
         
-        /* Prevents the game from ever spilling past the active visible screen */
-        max-height: 100%; 
-        max-width: calc(100% * 16 / 9);
+        /* 🛡️ THE CEILING: If the screen is ultra-wide (like an iPhone/Android landscape), 
+           clamp the box to the exact height of the clear view area so it can NEVER spill downwards. */
+        max-height: 100svh; 
+        max-width: calc(100svh * 16 / 9);
     }
 
-    /* 3. PORTRAIT MATRIX: Swaps calculations safely within the visible window box */
+    /* 📱 PORTRAIT AUTO-ROTATE MATRIX: Keeps the game safely scaled if held vertically */
     @media screen and (max-width: 1024px) and (orientation: portrait) {
         #game-container {
             position: absolute !important;
@@ -51,12 +54,12 @@
             left: 50% !important;
             aspect-ratio: 16 / 9;
             
-            height: 100% !important;   
-            width: calc(100% * 16 / 9) !important;  
+            /* Rotated landscape plane dimensions mapped cleanly to portrait limits */
+            width: 100svh !important;   
+            height: auto !important;  
             
-            /* Dynamic percentage clamps so the rotated box cannot clip on portrait URL heights */
-            max-width: 100% !important;
-            max-height: calc(100% * 9 / 16) !important;
+            max-width: calc(100svw * 16 / 9) !important;
+            max-height: 100svw !important;
             
             transform: translate(-50%, -50%) rotate(90deg) !important;
             transform-origin: center center !important;
@@ -70,7 +73,7 @@
         object-fit: contain;
     }
 
-    /* MOBILE BUTTONS CONTROLLER LAYER */
+    /* MOBILE BUTTONS LAYER */
     .mobile-ui-layer {
         display: none;
         position: absolute;

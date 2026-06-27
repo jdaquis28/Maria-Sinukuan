@@ -112,12 +112,50 @@
             display: block;
         }
     }
+
+        #title-screen-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 15; /* Sits completely above the coordinate-warped canvas layer */
+    pointer-events: auto;
+}
+
+#btn-start-game {
+    position: absolute;
+    top: 66%; /* Placed cleanly under your floating subtitle */
+    width: 240px;
+    height: 60px;
+    background-color: #1b5e20;
+    border: 3px solid #1b5e20;
+    border-radius: 4px;
+    color: #ffffff;
+    font-family: 'Courier New', monospace;
+    font-size: 22px;
+    font-weight: bold;
+    cursor: pointer;
+    box-sizing: border-box;
+    box-shadow: 0px 4px 10px rgba(0,0,0,0.5);
+}
+
+#btn-start-game:hover {
+    background-color: #2e7d32;
+    color: #a7ffeb;
+}
 </style>
 </head>
 
 <body>
 
     <div id="game-container">
+        <div id="title-screen-overlay">
+        <button id="btn-start-game">START GAME</button>
+    </div>
         <div class="mobile-ui-layer">
             <div class="touch-btn" id="btn-left" style="left: 15px; bottom: 15px; width: 70px; height: 70px; font-size: 26px;">◀</div>
             <div class="touch-btn" id="btn-right" style="left: 105px; bottom: 15px; width: 70px; height: 70px; font-size: 26px;">▶</div>
@@ -203,64 +241,52 @@
             preload() {
                 this.load.image('arayat_bg', 'assets/images/Cartoon_Forest_BG_03.png');
             }
-            create() {
-                this.scale.refresh();
-                this.add.image(512, 288, 'arayat_bg').setDisplaySize(1024, 576).setAlpha(0.6);
+           create() {
+    this.scale.refresh();
+    this.add.image(512, 288, 'arayat_bg').setDisplaySize(1024, 576).setAlpha(0.6);
+    
+    // Your floating pixel-art text lines stay intact!
+    let titleText = this.add.text(512, 180, 'MARIA SINUKUAN', {
+        fontSize: '64px',
+        fill: '#a7ffeb',
+        fontStyle: 'bold',
+        fontFamily: 'Courier New'
+    }).setOrigin(0.5);
+    titleText.setShadow(5, 5, '#000000', 0, true, true);
 
-                // Pixel Style Hover Title
-                let titleText = this.add.text(512, 180, 'MARIA SINUKUAN', {
-                    fontSize: '64px',
-                    fill: '#a7ffeb',
-                    fontStyle: 'bold',
-                    fontFamily: 'Courier New'
-                }).setOrigin(0.5);
-                titleText.setShadow(5, 5, '#000000', 0, true, true);
+    let subtitleText = this.add.text(512, 250, 'Vengeance of Arayat', {
+        fontSize: '28px',
+        fill: '#81c784',
+        fontStyle: 'italic',
+        fontFamily: 'Courier New'
+    }).setOrigin(0.5);
+    subtitleText.setShadow(2, 2, '#000000', 0, true, true);
 
-                let subtitleText = this.add.text(512, 250, 'Vengeance of Arayat', {
-                    fontSize: '28px',
-                    fill: '#81c784',
-                    fontStyle: 'italic',
-                    fontFamily: 'Courier New'
-                }).setOrigin(0.5);
-                subtitleText.setShadow(2, 2, '#000000', 0, true, true);
+    this.tweens.add({
+        targets: [titleText, subtitleText],
+        y: '-=15',              
+        duration: 1800,         
+        yoyo: true,             
+        loop: -1,               
+        ease: 'Sine.easeInOut' 
+    });
 
-                this.tweens.add({
-                    targets: [titleText, subtitleText],
-                    y: '-=15',
-                    duration: 1800,
-                    yoyo: true,
-                    loop: -1,
-                    ease: 'Sine.easeInOut'
-                });
-
-                let startBtnBg = this.add.rectangle(512, 390, 240, 60, 0x1b5e20).setInteractive({
-                    useHandCursor: true
-                });
-                let startBtnText = this.add.text(512, 390, 'START GAME', {
-                    fontSize: '22px',
-                    fill: '#ffffff',
-                    fontStyle: 'bold',
-                    fontFamily: 'Courier New'
-                }).setOrigin(0.5);
-
-                startBtnBg.on('pointerover', () => {
-                    startBtnBg.setFillStyle(0x2e7d32);
-                    startBtnText.setFill('#a7ffeb');
-                });
-                startBtnBg.on('pointerout', () => {
-                    startBtnBg.setFillStyle(0x1b5e20);
-                    startBtnText.setFill('#ffffff');
-                });
-
-                // Start Game & Audio Context
-                startBtnBg.on('pointerdown', () => {
-                    if (this.sound.context.state === 'suspended') {
-                        this.sound.context.resume();
-                    }
-                    this.scene.start('GameScene');
-                });
+    // 🛠️ LINK TO NATIVE ELEMENT CONTROL
+    const overlay = document.getElementById('title-screen-overlay');
+    const startBtn = document.getElementById('btn-start-game');
+    
+    if (overlay) overlay.style.display = 'flex'; // Ensure button shows up on reset
+    
+    if (startBtn) {
+        startBtn.onclick = () => {
+            if (overlay) overlay.style.display = 'none'; // Clear button from view immediately
+            if (this.sound.context.state === 'suspended') {
+                this.sound.context.resume(); // Safe browser audio unlock sequence
             }
-        }
+            this.scene.start('GameScene');
+        };
+    }
+}
 
         // --- 3. CORE GAMEPLAY SCENE ---
         class GameScene extends Phaser.Scene {

@@ -6,151 +6,116 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Maria Sinukuan: Vengeance of Arayat</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
-    <style>
- html, body {
-    margin: 0;
-    padding: 0;
-    width: 100svw;
-    height: 100svh;
-    background-color: #111411;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-family: 'Courier New', Courier, monospace;
-    overflow: hidden;
-    touch-action: none;
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    user-select: none;
-}
-
-/* 🧩 FIXED VIEWPORT ENGINE: Uses strict mathematical sizing to prevent 0px collapsing */
-#game-container {
-    position: relative;
-    box-shadow: 0px 0px 25px rgba(0, 255, 64, 0.2);
-    border: 4px solid #1b5e20;
-    box-sizing: border-box;
-    aspect-ratio: 16 / 9;
+ <style>
+    html, body {
+        margin: 0;
+        padding: 0;
+        /* Force the root frame to lock onto the strict visible screen bounds */
+        width: 100svw;
+        height: 100svh;
+        background-color: #111411;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-family: 'Courier New', Courier, monospace;
+        overflow: hidden;
+        touch-action: none;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+    }
     
-    /* 🛠️ THE FIX: Forces an absolute widescreen height calculation based on available width */
-    width: 100svw;
-    height: calc(100svw * 9 / 16); 
-    
-    /* Keeps the box clamped cleanly within the visible viewport ceiling */
-    max-height: 100svh; 
-    max-width: calc(100svh * 16 / 9);
-}
-
-/* 📱 PORTRAIT AUTO-ROTATE MATRIX: Locks dimensions rigidly when phone is vertical */
-@media screen and (max-width: 1024px) and (orientation: portrait) {
+    /* 🧩 THE CLAMPED VIEWPORT ENGINE */
     #game-container {
-        position: absolute !important;
-        top: 50% !important;
-        left: 50% !important;
+        position: relative;
+        box-shadow: 0px 0px 25px rgba(0, 255, 64, 0.2);
+        border: 4px solid #1b5e20;
+        box-sizing: border-box;
+        
+        /* Enforce a rigid aspect ratio box */
         aspect-ratio: 16 / 9;
         
-        /* 🛠️ THE FIX: Replaces 'auto' with explicit rotated calculations */
-        width: 100svh !important;   
-        height: calc(100svh * 9 / 16) !important;  
+        /* Default: Try to fill the screen widthwise */
+        width: 100svw;
+        height: auto;
         
-        max-width: calc(100svw * 16 / 9) !important;
-        max-height: 100svw !important;
-        
-        transform: translate(-50%, -50%) rotate(90deg) !important;
-        transform-origin: center center !important;
+        /* 🛡️ THE CEILING: If the screen is ultra-wide (like an iPhone/Android landscape), 
+           clamp the box to the exact height of the clear view area so it can NEVER spill downwards. */
+        max-height: 100svh; 
+        max-width: calc(100svh * 16 / 9);
     }
-}
 
-canvas {
-    display: block;
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: contain;
-}
+    /* 📱 PORTRAIT AUTO-ROTATE MATRIX: Keeps the game safely scaled if held vertically */
+    @media screen and (max-width: 1024px) and (orientation: portrait) {
+        #game-container {
+            position: absolute !important;
+            top: 50% !important;
+            left: 50% !important;
+            aspect-ratio: 16 / 9;
+            
+            /* Rotated landscape plane dimensions mapped cleanly to portrait limits */
+            width: 100svh !important;   
+            height: auto !important;  
+            
+            max-width: calc(100svw * 16 / 9) !important;
+            max-height: 100svw !important;
+            
+            transform: translate(-50%, -50%) rotate(90deg) !important;
+            transform-origin: center center !important;
+        }
+    }
 
-/* HTML OVERLAYS & NAVIGATION LAYER */
-#title-screen-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 15;
-    pointer-events: auto;
-}
-
-#btn-start-game {
-    position: absolute;
-    top: 66%;
-    width: 240px;
-    height: 60px;
-    background-color: #1b5e20;
-    border: 3px solid #1b5e20;
-    border-radius: 4px;
-    color: #ffffff;
-    font-family: 'Courier New', monospace;
-    font-size: 22px;
-    font-weight: bold;
-    cursor: pointer;
-    box-sizing: border-box;
-    box-shadow: 0px 4px 10px rgba(0,0,0,0.5);
-}
-
-#btn-start-game:hover {
-    background-color: #2e7d32;
-    color: #a7ffeb;
-}
-
-.mobile-ui-layer {
-    display: none;
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    z-index: 10;
-}
-
-.touch-btn {
-    position: absolute;
-    background: rgba(34, 34, 34, 0.6);
-    border: 3px solid #1b5e20;
-    border-radius: 12px;
-    color: #4caf50;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-weight: bold;
-    font-family: 'Courier New', monospace;
-    pointer-events: auto;
-    touch-action: none;
-    box-sizing: border-box;
-}
-
-.touch-btn:active {
-    background: rgba(27, 94, 32, 0.6);
-    color: #a7ffeb;
-    border-color: #a7ffeb;
-}
-
-@media (pointer: coarse) {
-    .mobile-ui-layer {
+    canvas {
         display: block;
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: contain;
     }
-}
-</style>
-</head>
+
+    /* MOBILE BUTTONS LAYER */
+    .mobile-ui-layer {
+        display: none;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 10;
+    }
+    
+    .touch-btn {
+        position: absolute;
+        background: rgba(34, 34, 34, 0.6);
+        border: 3px solid #1b5e20;
+        border-radius: 12px;
+        color: #4caf50;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-weight: bold;
+        font-family: 'Courier New', monospace;
+        pointer-events: auto;
+        touch-action: none;
+        box-sizing: border-box;
+    }
+    
+    .touch-btn:active {
+        background: rgba(27, 94, 32, 0.6);
+        color: #a7ffeb;
+        border-color: #a7ffeb;
+    }
+    
+    @media (pointer: coarse) {
+        .mobile-ui-layer {
+            display: block;
+        }
+    }
+</style></head>
 
 <body>
 
     <div id="game-container">
-        <div id="title-screen-overlay">
-        <button id="btn-start-game">START GAME</button>
-    </div>
         <div class="mobile-ui-layer">
             <div class="touch-btn" id="btn-left" style="left: 15px; bottom: 15px; width: 70px; height: 70px; font-size: 26px;">◀</div>
             <div class="touch-btn" id="btn-right" style="left: 105px; bottom: 15px; width: 70px; height: 70px; font-size: 26px;">▶</div>
@@ -166,13 +131,13 @@ canvas {
         // --- 1. CORE CONFIGURATION ---
         const config = {
             type: Phaser.AUTO,
-          scale: {
-    mode: Phaser.Scale.FIT,
-    parent: 'game-container',
-    autoCenter: Phaser.Scale.CENTER_BOTH,
-    width: 1024,
-    height: 576
-},
+            scale: {
+                mode: Phaser.Scale.FIT,
+                parent: 'game-container',
+                autoCenter: Phaser.Scale.CENTER_BOTH,
+                width: 1024,
+                height: 576
+            },
             physics: {
                 default: 'arcade',
                 arcade: {
@@ -236,52 +201,64 @@ canvas {
             preload() {
                 this.load.image('arayat_bg', 'assets/images/Cartoon_Forest_BG_03.png');
             }
-           create() {
-    this.scale.refresh();
-    this.add.image(512, 288, 'arayat_bg').setDisplaySize(1024, 576).setAlpha(0.6);
-    
-    // Your floating pixel-art text lines stay intact!
-    let titleText = this.add.text(512, 180, 'MARIA SINUKUAN', {
-        fontSize: '64px',
-        fill: '#a7ffeb',
-        fontStyle: 'bold',
-        fontFamily: 'Courier New'
-    }).setOrigin(0.5);
-    titleText.setShadow(5, 5, '#000000', 0, true, true);
+            create() {
+                this.scale.refresh();
+                this.add.image(512, 288, 'arayat_bg').setDisplaySize(1024, 576).setAlpha(0.6);
 
-    let subtitleText = this.add.text(512, 250, 'Vengeance of Arayat', {
-        fontSize: '28px',
-        fill: '#81c784',
-        fontStyle: 'italic',
-        fontFamily: 'Courier New'
-    }).setOrigin(0.5);
-    subtitleText.setShadow(2, 2, '#000000', 0, true, true);
+                // Pixel Style Hover Title
+                let titleText = this.add.text(512, 180, 'MARIA SINUKUAN', {
+                    fontSize: '64px',
+                    fill: '#a7ffeb',
+                    fontStyle: 'bold',
+                    fontFamily: 'Courier New'
+                }).setOrigin(0.5);
+                titleText.setShadow(5, 5, '#000000', 0, true, true);
 
-    this.tweens.add({
-        targets: [titleText, subtitleText],
-        y: '-=15',              
-        duration: 1800,         
-        yoyo: true,             
-        loop: -1,               
-        ease: 'Sine.easeInOut' 
-    });
+                let subtitleText = this.add.text(512, 250, 'Vengeance of Arayat', {
+                    fontSize: '28px',
+                    fill: '#81c784',
+                    fontStyle: 'italic',
+                    fontFamily: 'Courier New'
+                }).setOrigin(0.5);
+                subtitleText.setShadow(2, 2, '#000000', 0, true, true);
 
-    // 🛠️ LINK TO NATIVE ELEMENT CONTROL
-    const overlay = document.getElementById('title-screen-overlay');
-    const startBtn = document.getElementById('btn-start-game');
-    
-    if (overlay) overlay.style.display = 'flex'; // Ensure button shows up on reset
-    
-    if (startBtn) {
-        startBtn.onclick = () => {
-            if (overlay) overlay.style.display = 'none'; // Clear button from view immediately
-            if (this.sound.context.state === 'suspended') {
-                this.sound.context.resume(); // Safe browser audio unlock sequence
+                this.tweens.add({
+                    targets: [titleText, subtitleText],
+                    y: '-=15',
+                    duration: 1800,
+                    yoyo: true,
+                    loop: -1,
+                    ease: 'Sine.easeInOut'
+                });
+
+                let startBtnBg = this.add.rectangle(512, 390, 240, 60, 0x1b5e20).setInteractive({
+                    useHandCursor: true
+                });
+                let startBtnText = this.add.text(512, 390, 'START GAME', {
+                    fontSize: '22px',
+                    fill: '#ffffff',
+                    fontStyle: 'bold',
+                    fontFamily: 'Courier New'
+                }).setOrigin(0.5);
+
+                startBtnBg.on('pointerover', () => {
+                    startBtnBg.setFillStyle(0x2e7d32);
+                    startBtnText.setFill('#a7ffeb');
+                });
+                startBtnBg.on('pointerout', () => {
+                    startBtnBg.setFillStyle(0x1b5e20);
+                    startBtnText.setFill('#ffffff');
+                });
+
+                // Start Game & Audio Context
+                startBtnBg.on('pointerdown', () => {
+                    if (this.sound.context.state === 'suspended') {
+                        this.sound.context.resume();
+                    }
+                    this.scene.start('GameScene');
+                });
             }
-            this.scene.start('GameScene');
-        };
-    }
-}
+        }
 
         // --- 3. CORE GAMEPLAY SCENE ---
         class GameScene extends Phaser.Scene {

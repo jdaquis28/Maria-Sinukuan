@@ -7,93 +7,84 @@
     <title>Maria Sinukuan: Vengeance of Arayat</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: #111411;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            width: 100vw;
-            font-family: 'Courier New', Courier, monospace;
-            overflow: hidden;
-            touch-action: none;
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            user-select: none;
-        }
-        
-        #game-container {
-            position: relative;
-            box-shadow: 0px 0px 25px rgba(0, 255, 64, 0.2);
-            border: 4px solid #1b5e20;
-            width: 1024px;
-            height: 576px;
-            max-width: 100vw;
-            max-height: 100vh;
-            box-sizing: border-box;
-        }
-        /* 📱 FORCED MOBILE LANDSCAPE ROTATION SYSTEM */
-        
-        @media screen and (max-width: 1024px) and (orientation: portrait) {
-            #game-container {
-                transform: rotate(90deg);
-                width: 100vh !important;
-                height: 100vw !important;
-                max-width: 100vh !important;
-                max-height: 100vw !important;
-                transform-origin: center center;
-            }
-        }
-        
-        canvas {
-            display: block;
-            width: 100% !important;
-            height: 100% !important;
-            object-fit: contain;
-        }
-        /* 📱 MOBILE BUTTONS LAYER */
-        
+    body {
+        margin: 0;
+        padding: 0;
+        background-color: #111411;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        width: 100vw;
+        font-family: 'Courier New', Courier, monospace;
+        overflow: hidden;
+        touch-action: none;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+    }
+    
+    /* 🧩 THE FLEXIBLE WRAPPER: Matches a clean 16:9 widescreen ratio dynamically */
+    #game-container {
+        position: relative;
+        box-shadow: 0px 0px 25px rgba(0, 255, 64, 0.2);
+        border: 4px solid #1b5e20;
+        /* Dynamic viewport matching */
+        width: 100vw;
+        height: 56.25vw; /* 16:9 Aspect Ratio calculation (576 / 1024) */
+        max-width: 177.78vh; /* 16:9 Aspect Ratio calculation (1024 / 576) */
+        max-height: 100vh;
+        box-sizing: border-box;
+    }
+
+    /* Force the canvas to obey the fluid container boundary */
+    canvas {
+        display: block;
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: contain;
+    }
+
+    /* 📱 ACCURATE MOBILE OVERLAY: Locked precisely to the game canvas coordinate grid */
+    .mobile-ui-layer {
+        display: none;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 10;
+    }
+    
+    .touch-btn {
+        position: absolute;
+        background: rgba(34, 34, 34, 0.6);
+        border: 3px solid #1b5e20;
+        border-radius: 12px;
+        color: #4caf50;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-weight: bold;
+        font-family: 'Courier New', monospace;
+        pointer-events: auto;
+        touch-action: none;
+        box-sizing: border-box;
+    }
+    
+    .touch-btn:active {
+        background: rgba(27, 94, 32, 0.6);
+        color: #a7ffeb;
+        border-color: #a7ffeb;
+    }
+    
+    @media (pointer: coarse) {
         .mobile-ui-layer {
-            display: none;
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 10;
+            display: block;
         }
-        
-        .touch-btn {
-            position: absolute;
-            background: rgba(34, 34, 34, 0.6);
-            border: 3px solid #1b5e20;
-            border-radius: 12px;
-            color: #4caf50;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-weight: bold;
-            font-family: 'Courier New', monospace;
-            pointer-events: auto;
-            touch-action: none;
-            box-sizing: border-box;
-        }
-        
-        .touch-btn:active {
-            background: rgba(27, 94, 32, 0.6);
-            color: #a7ffeb;
-            border-color: #a7ffeb;
-        }
-        
-        @media (pointer: coarse) {
-            .mobile-ui-layer {
-                display: block;
-            }
-        }
-    </style>
+    }
+</style>
 </head>
 
 <body>

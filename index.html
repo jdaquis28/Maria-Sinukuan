@@ -7,113 +7,69 @@
     <title>Maria Sinukuan: Vengeance of Arayat</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
     <style>
- <style>
-    html, body {
-        margin: 0;
-        padding: 0;
-        /* Force the root frame to lock onto the strict visible screen bounds */
-        width: 100svw;
-        height: 100svh;
-        background-color: #111411;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        font-family: 'Courier New', Courier, monospace;
-        overflow: hidden;
-        touch-action: none;
-        -webkit-touch-callout: none;
-        -webkit-user-select: none;
-        user-select: none;
-    }
+ html, body {
+    margin: 0;
+    padding: 0;
+    width: 100svw;
+    height: 100svh;
+    background-color: #111411;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Courier New', Courier, monospace;
+    overflow: hidden;
+    touch-action: none;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* 🧩 FIXED VIEWPORT ENGINE: Uses strict mathematical sizing to prevent 0px collapsing */
+#game-container {
+    position: relative;
+    box-shadow: 0px 0px 25px rgba(0, 255, 64, 0.2);
+    border: 4px solid #1b5e20;
+    box-sizing: border-box;
+    aspect-ratio: 16 / 9;
     
-    /* 🧩 THE CLAMPED VIEWPORT ENGINE */
+    /* 🛠️ THE FIX: Forces an absolute widescreen height calculation based on available width */
+    width: 100svw;
+    height: calc(100svw * 9 / 16); 
+    
+    /* Keeps the box clamped cleanly within the visible viewport ceiling */
+    max-height: 100svh; 
+    max-width: calc(100svh * 16 / 9);
+}
+
+/* 📱 PORTRAIT AUTO-ROTATE MATRIX: Locks dimensions rigidly when phone is vertical */
+@media screen and (max-width: 1024px) and (orientation: portrait) {
     #game-container {
-        position: relative;
-        box-shadow: 0px 0px 25px rgba(0, 255, 64, 0.2);
-        border: 4px solid #1b5e20;
-        box-sizing: border-box;
-        
-        /* Enforce a rigid aspect ratio box */
+        position: absolute !important;
+        top: 50% !important;
+        left: 50% !important;
         aspect-ratio: 16 / 9;
         
-        /* Default: Try to fill the screen widthwise */
-        width: 100svw;
-        height: auto;
+        /* 🛠️ THE FIX: Replaces 'auto' with explicit rotated calculations */
+        width: 100svh !important;   
+        height: calc(100svh * 9 / 16) !important;  
         
-        /* 🛡️ THE CEILING: If the screen is ultra-wide (like an iPhone/Android landscape), 
-           clamp the box to the exact height of the clear view area so it can NEVER spill downwards. */
-        max-height: 100svh; 
-        max-width: calc(100svh * 16 / 9);
+        max-width: calc(100svw * 16 / 9) !important;
+        max-height: 100svw !important;
+        
+        transform: translate(-50%, -50%) rotate(90deg) !important;
+        transform-origin: center center !important;
     }
+}
 
-    /* 📱 PORTRAIT AUTO-ROTATE MATRIX: Keeps the game safely scaled if held vertically */
-    @media screen and (max-width: 1024px) and (orientation: portrait) {
-        #game-container {
-            position: absolute !important;
-            top: 50% !important;
-            left: 50% !important;
-            aspect-ratio: 16 / 9;
-            
-            /* Rotated landscape plane dimensions mapped cleanly to portrait limits */
-            width: 100svh !important;   
-            height: auto !important;  
-            
-            max-width: calc(100svw * 16 / 9) !important;
-            max-height: 100svw !important;
-            
-            transform: translate(-50%, -50%) rotate(90deg) !important;
-            transform-origin: center center !important;
-        }
-    }
+canvas {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain;
+}
 
-    canvas {
-        display: block;
-        width: 100% !important;
-        height: 100% !important;
-        object-fit: contain;
-    }
-
-    /* MOBILE BUTTONS LAYER */
-    .mobile-ui-layer {
-        display: none;
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-        z-index: 10;
-    }
-    
-    .touch-btn {
-        position: absolute;
-        background: rgba(34, 34, 34, 0.6);
-        border: 3px solid #1b5e20;
-        border-radius: 12px;
-        color: #4caf50;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        font-weight: bold;
-        font-family: 'Courier New', monospace;
-        pointer-events: auto;
-        touch-action: none;
-        box-sizing: border-box;
-    }
-    
-    .touch-btn:active {
-        background: rgba(27, 94, 32, 0.6);
-        color: #a7ffeb;
-        border-color: #a7ffeb;
-    }
-    
-    @media (pointer: coarse) {
-        .mobile-ui-layer {
-            display: block;
-        }
-    }
-
-        #title-screen-overlay {
+/* HTML OVERLAYS & NAVIGATION LAYER */
+#title-screen-overlay {
     position: absolute;
     top: 0;
     left: 0;
@@ -122,13 +78,13 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 15; /* Sits completely above the coordinate-warped canvas layer */
+    z-index: 15;
     pointer-events: auto;
 }
 
 #btn-start-game {
     position: absolute;
-    top: 66%; /* Placed cleanly under your floating subtitle */
+    top: 66%;
     width: 240px;
     height: 60px;
     background-color: #1b5e20;
@@ -146,6 +102,45 @@
 #btn-start-game:hover {
     background-color: #2e7d32;
     color: #a7ffeb;
+}
+
+.mobile-ui-layer {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.touch-btn {
+    position: absolute;
+    background: rgba(34, 34, 34, 0.6);
+    border: 3px solid #1b5e20;
+    border-radius: 12px;
+    color: #4caf50;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    font-family: 'Courier New', monospace;
+    pointer-events: auto;
+    touch-action: none;
+    box-sizing: border-box;
+}
+
+.touch-btn:active {
+    background: rgba(27, 94, 32, 0.6);
+    color: #a7ffeb;
+    border-color: #a7ffeb;
+}
+
+@media (pointer: coarse) {
+    .mobile-ui-layer {
+        display: block;
+    }
 }
 </style>
 </head>

@@ -6,155 +6,116 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Maria Sinukuan: Vengeance of Arayat</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
-<style>
-        html, body {
-            margin: 0;
-            padding: 0;
-            width: 100svw;
-            height: 100svh;
-            background-color: #111411;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-family: 'Courier New', Courier, monospace;
-            overflow: hidden;
-            touch-action: none;
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            user-select: none;
-        }
+ <style>
+    html, body {
+        margin: 0;
+        padding: 0;
+        /* Force the root frame to lock onto the strict visible screen bounds */
+        width: 100svw;
+        height: 100svh;
+        background-color: #111411;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-family: 'Courier New', Courier, monospace;
+        overflow: hidden;
+        touch-action: none;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+    }
+    
+    /* 🧩 THE CLAMPED VIEWPORT ENGINE */
+    #game-container {
+        position: relative;
+        box-shadow: 0px 0px 25px rgba(0, 255, 64, 0.2);
+        border: 4px solid #1b5e20;
+        box-sizing: border-box;
         
-        /* 🧩 THE CLAMPED VIEWPORT ENGINE */
+        /* Enforce a rigid aspect ratio box */
+        aspect-ratio: 16 / 9;
+        
+        /* Default: Try to fill the screen widthwise */
+        width: 100svw;
+        height: auto;
+        
+        /* 🛡️ THE CEILING: If the screen is ultra-wide (like an iPhone/Android landscape), 
+           clamp the box to the exact height of the clear view area so it can NEVER spill downwards. */
+        max-height: 100svh; 
+        max-width: calc(100svh * 16 / 9);
+    }
+
+    /* 📱 PORTRAIT AUTO-ROTATE MATRIX: Keeps the game safely scaled if held vertically */
+    @media screen and (max-width: 1024px) and (orientation: portrait) {
         #game-container {
-            position: relative;
-            box-shadow: 0px 0px 25px rgba(0, 255, 64, 0.2);
-            border: 4px solid #1b5e20;
-            box-sizing: border-box;
+            position: absolute !important;
+            top: 50% !important;
+            left: 50% !important;
             aspect-ratio: 16 / 9;
             
-            width: 100svw;
-            height: calc(100svw * 9 / 16); 
+            /* Rotated landscape plane dimensions mapped cleanly to portrait limits */
+            width: 100svh !important;   
+            height: auto !important;  
             
-            max-height: 100svh; 
-            max-width: calc(100svh * 16 / 9);
+            max-width: calc(100svw * 16 / 9) !important;
+            max-height: 100svw !important;
+            
+            transform: translate(-50%, -50%) rotate(90deg) !important;
+            transform-origin: center center !important;
         }
+    }
 
-        /* 📱 PORTRAIT AUTO-ROTATE MATRIX */
-        @media screen and (max-width: 1024px) and (orientation: portrait) {
-            #game-container {
-                position: absolute !important;
-                top: 50% !important;
-                left: 50% !important;
-                aspect-ratio: 16 / 9;
-                
-                width: 100svw !important;   
-                height: calc(100svw * 16 / 9) !important;  
-                
-                max-height: 100svh !important;
-                
-                transform: translate(-50%, -50%) rotate(90deg) !important;
-                transform-origin: center center !important;
-            }
-        }
+    canvas {
+        display: block;
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: contain;
+    }
 
-        canvas {
-            display: block;
-            width: 100% !important;
-            height: 100% !important;
-            object-fit: contain;
-        }
-
-        /* 🖥️ UNIVERSAL START BUTTON MATRIX */
-        #btn-start-game {
-            position: absolute;
-            left: 50%;
-            top: 66%; 
-            transform: translateX(-50%);
-            width: 240px;
-            height: 60px;
-            background-color: #1b5e20;
-            border: 3px solid #1b5e20;
-            border-radius: 12px; 
-            color: #ffffff;
-            font-family: 'Courier New', monospace;
-            font-size: 22px;
-            font-weight: bold;
-            cursor: pointer;
-            box-sizing: border-box;
-            box-shadow: 0px 4px 10px rgba(0,0,0,0.5);
-            z-index: 15;
-            pointer-events: auto;
-        }
-
-        #btn-start-game:hover {
-            background-color: #2e7d32;
-            color: #a7ffeb;
-        }
-
-        /* MOBILE BUTTONS LAYER */
+    /* MOBILE BUTTONS LAYER */
+    .mobile-ui-layer {
+        display: none;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 10;
+    }
+    
+    .touch-btn {
+        position: absolute;
+        background: rgba(34, 34, 34, 0.6);
+        border: 3px solid #1b5e20;
+        border-radius: 12px;
+        color: #4caf50;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-weight: bold;
+        font-family: 'Courier New', monospace;
+        pointer-events: auto;
+        touch-action: none;
+        box-sizing: border-box;
+    }
+    
+    .touch-btn:active {
+        background: rgba(27, 94, 32, 0.6);
+        color: #a7ffeb;
+        border-color: #a7ffeb;
+    }
+    
+    @media (pointer: coarse) {
         .mobile-ui-layer {
-            display: none;
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 10;
+            display: block;
         }
-        
-        .touch-btn {
-            position: absolute;
-            background: rgba(34, 34, 34, 0.6);
-            border: 3px solid #1b5e20;
-            border-radius: 12px;
-            color: #4caf50;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-weight: bold;
-            font-family: 'Courier New', monospace;
-            pointer-events: auto;
-            touch-action: none;
-            box-sizing: border-box;
-        }
-        
-        .touch-btn:active {
-            background: rgba(27, 94, 32, 0.6);
-            color: #a7ffeb;
-            border-color: #a7ffeb;
-        }
-        
-        /* 📱 TOUCH SCREEN CONDITIONAL UI STYLING */
-        @media (pointer: coarse) {
-            .mobile-ui-layer {
-                display: block;
-            }
-
-            /* Seamlessly transforms your desktop layout button into an error-free native mobile button */
-            #btn-start-game {
-                background: rgba(34, 34, 34, 0.6) !important;
-                border: 3px solid #1b5e20 !important;
-                color: #4caf50 !important;
-                font-size: 18px !important;
-                width: 160px !important;
-                height: 60px !important;
-                top: 65% !important;
-            }
-            
-            #btn-start-game:active {
-                background: rgba(27, 94, 32, 0.6) !important;
-                color: #a7ffeb !important;
-                border-color: #a7ffeb !important;
-            }
-        }
-    </style>
-</head>
+    }
+</style></head>
 
 <body>
 
     <div id="game-container">
-        <button id="btn-start-game">START GAME</button>
         <div class="mobile-ui-layer">
             <div class="touch-btn" id="btn-left" style="left: 15px; bottom: 15px; width: 70px; height: 70px; font-size: 26px;">◀</div>
             <div class="touch-btn" id="btn-right" style="left: 105px; bottom: 15px; width: 70px; height: 70px; font-size: 26px;">▶</div>
@@ -240,10 +201,11 @@
             preload() {
                 this.load.image('arayat_bg', 'assets/images/Cartoon_Forest_BG_03.png');
             }
-          create() {
-  this.scale.refresh();
+            create() {
+                this.scale.refresh();
                 this.add.image(512, 288, 'arayat_bg').setDisplaySize(1024, 576).setAlpha(0.6);
 
+                // Pixel Style Hover Title
                 let titleText = this.add.text(512, 180, 'MARIA SINUKUAN', {
                     fontSize: '64px',
                     fill: '#a7ffeb',
@@ -269,29 +231,35 @@
                     ease: 'Sine.easeInOut'
                 });
 
-                const startBtn = document.getElementById('btn-start-game');
-                if (startBtn) startBtn.style.display = 'block'; // Make sure button displays on start loop
+                let startBtnBg = this.add.rectangle(512, 390, 240, 60, 0x1b5e20).setInteractive({
+                    useHandCursor: true
+                });
+                let startBtnText = this.add.text(512, 390, 'START GAME', {
+                    fontSize: '22px',
+                    fill: '#ffffff',
+                    fontStyle: 'bold',
+                    fontFamily: 'Courier New'
+                }).setOrigin(0.5);
 
-                const launchGameEngine = () => {
-                    if (startBtn) startBtn.style.display = 'none'; // Instantly dismiss button when game runs
+                startBtnBg.on('pointerover', () => {
+                    startBtnBg.setFillStyle(0x2e7d32);
+                    startBtnText.setFill('#a7ffeb');
+                });
+                startBtnBg.on('pointerout', () => {
+                    startBtnBg.setFillStyle(0x1b5e20);
+                    startBtnText.setFill('#ffffff');
+                });
+
+                // Start Game & Audio Context
+                startBtnBg.on('pointerdown', () => {
                     if (this.sound.context.state === 'suspended') {
                         this.sound.context.resume();
                     }
                     this.scene.start('GameScene');
-                };
-
-                if (startBtn) {
-                    if (this.sys.game.device.input.touch) {
-                        startBtn.addEventListener('touchstart', (e) => {
-                            e.preventDefault();
-                            launchGameEngine();
-                        });
-                    } else {
-                        startBtn.onclick = () => launchGameEngine();
-                    }
-                }
+                });
             }
         }
+
         // --- 3. CORE GAMEPLAY SCENE ---
         class GameScene extends Phaser.Scene {
             constructor() {
@@ -1340,13 +1308,18 @@
                 }
             }
 
-           hurtPlayer(playerRef, enemyRef) {
+            hurtPlayer(playerRef, enemyRef) {
                 if (isDead || isAttacking || isShifting || enemyRef.health <= 0) return;
-                isAttacking = true; playerHealth = Math.max(0, playerHealth - 15); this.updateUI();
+                isAttacking = true;
+                playerHealth = Math.max(0, playerHealth - 15);
+                this.updateUI();
+
+                // 🔊 Player Damage Sound
                 this.playSound('snd_hurt', 0.5);
 
                 if (enemyRef !== bossBody) {
-                    enemyRef.isHurt = true; enemyRef.body.setVelocityX(0);
+                    enemyRef.isHurt = true;
+                    enemyRef.body.setVelocityX(0);
                     enemyRef.anims.play(`${enemyRef.typeId}_attack_key`, true);
 
                     enemyRef.once('animationcomplete', () => {
@@ -1356,13 +1329,17 @@
                 }
 
                 let knockbackDir = enemyRef.x > playerRef.x ? -200 : 200;
-                playerRef.body.setVelocityX(knockbackDir); playerRef.body.setVelocityY(-200);
+                playerRef.body.setVelocityX(knockbackDir);
+                playerRef.body.setVelocityY(-200);
 
                 playerRef.anims.play(currentForm === 'diwata' ? 'diwata_hurt' : 'ermitanyo_hurt', true).setTint(0xff5252);
                 playerRef.once(currentForm === 'diwata' ? 'animationcomplete-diwata_hurt' : 'animationcomplete-ermitanyo_hurt', () => {
-                    playerRef.clearTint(); isAttacking = false; if (playerHealth <= 0) this.triggerPlayerDeath();
+                    playerRef.clearTint();
+                    isAttacking = false;
+                    if (playerHealth <= 0) this.triggerPlayerDeath();
                 });
             }
+
             triggerPlayerDeath() {
                 isDead = true;
                 player.body.setVelocity(0, 0);

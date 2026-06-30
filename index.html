@@ -241,66 +241,67 @@
 
         // --- 2. TITLE SCREEN SCENE ---
         class TitleScene extends Phaser.Scene {
-            constructor() {
-                super({
-                    key: 'TitleScene'
-                });
+    constructor() {
+        super({
+            key: 'TitleScene'
+        });
+    }
+    preload() {
+        this.load.image('arayat_bg', 'assets/images/Cartoon_Forest_BG_03.png');
+    }
+    create() {
+        this.scale.refresh();
+        this.add.image(512, 288, 'arayat_bg').setDisplaySize(1024, 576).setAlpha(0.6);
+
+        // Pixel Style Hover Title
+        let titleText = this.add.text(512, 180, 'MARIA SINUKUAN', {
+            fontSize: '64px',
+            fill: '#a7ffeb',
+            fontStyle: 'bold',
+            fontFamily: 'Courier New'
+        }).setOrigin(0.5);
+        titleText.setShadow(5, 5, '#000000', 0, true, true);
+
+        let subtitleText = this.add.text(512, 250, 'Vengeance of Arayat', {
+            fontSize: '28px',
+            fill: '#81c784',
+            fontStyle: 'italic',
+            fontFamily: 'Courier New'
+        }).setOrigin(0.5);
+        subtitleText.setShadow(2, 2, '#000000', 0, true, true);
+
+        this.tweens.add({
+            targets: [titleText, subtitleText],
+            y: '-=15',
+            duration: 1800,
+            yoyo: true,
+            loop: -1,
+            ease: 'Sine.easeInOut'
+        });
+
+        // 🛠️ CAPTURE AND ROUTE NATIVE BUTTON INTERACTIONS
+        const startBtn = document.getElementById('btn-start-game');
+        if (startBtn) startBtn.style.display = 'block'; // Ensure visibility holds during scenes resets
+
+        const launchGameEngine = () => {
+            if (startBtn) startBtn.style.display = 'none'; // Instantly dismiss button when scenes initialize
+            if (this.sound.context.state === 'suspended') {
+                this.sound.context.resume(); // Safely activates web browser audio manager threads
             }
-            preload() {
-                this.load.image('arayat_bg', 'assets/images/Cartoon_Forest_BG_03.png');
-            }
-          create() {
-    this.scale.refresh();
-    this.add.image(512, 288, 'arayat_bg').setDisplaySize(1024, 576).setAlpha(0.6);
+            this.scene.start('GameScene');
+        };
 
-    // Pixel Style Hover Title
-    let titleText = this.add.text(512, 180, 'MARIA SINUKUAN', {
-        fontSize: '64px',
-        fill: '#a7ffeb',
-        fontStyle: 'bold',
-        fontFamily: 'Courier New'
-    }).setOrigin(0.5);
-    titleText.setShadow(5, 5, '#000000', 0, true, true);
-
-    let subtitleText = this.add.text(512, 250, 'Vengeance of Arayat', {
-        fontSize: '28px',
-        fill: '#81c784',
-        fontStyle: 'italic',
-        fontFamily: 'Courier New'
-    }).setOrigin(0.5);
-    subtitleText.setShadow(2, 2, '#000000', 0, true, true);
-
-    this.tweens.add({
-        targets: [titleText, subtitleText],
-        y: '-=15',
-        duration: 1800,
-        yoyo: true,
-        loop: -1,
-        ease: 'Sine.easeInOut'
-    });
-
-    // 🛠️ CAPTURE AND ROUTE NATIVE BUTTON INTERACTIONS
-    const startBtn = document.getElementById('btn-start-game');
-    if (startBtn) startBtn.style.display = 'block'; // Ensure visibility holds during scenes resets
-
-    const launchGameEngine = () => {
-        if (startBtn) startBtn.style.display = 'none'; // Instantly dismiss button when scenes initialize
-        if (this.sound.context.state === 'suspended') {
-            this.sound.context.resume(); // Safely activates web browser audio manager threads
-        }
-        this.scene.start('GameScene');
-    };
-
-    if (startBtn) {
-        // High performance touch event loop mapping for active phone displays
-        if (this.sys.game.device.input.touch) {
+        if (startBtn) {
+            // 📱 Mobile Touch Listener (Bypasses the 300ms click delay)
             startBtn.addEventListener('touchstart', (e) => {
-                e.preventDefault(); // Nullifies native 300ms click delay latency bugs
+                e.preventDefault(); 
                 launchGameEngine();
             });
-        } else {
-            // Standard click routine for active keyboard/mouse units
-            startBtn.onclick = () => launchGameEngine();
+
+            // 🖥️ Desktop Mouse Click Listener
+            startBtn.onclick = () => {
+                launchGameEngine();
+            };
         }
     }
 }

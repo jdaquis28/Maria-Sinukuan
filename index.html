@@ -1364,7 +1364,7 @@
     if (enemyRef !== bossBody) {
         enemyRef.isHurt = true;
         enemyRef.body.setVelocityX(0);
-        enemyRef.anims.play(`${enemyRef.typeId}_attack_key`, true);
+        enemyRef.anims.play(`${enemyRef.typeId}_attack`, true);
 
         enemyRef.once('animationcomplete', () => {
             enemyRef.isHurt = false;
@@ -1372,7 +1372,7 @@
                 enemyRef.body.setVelocityX(enemyRef.flipX ? enemyRef.patrolSpeed : -enemyRef.patrolSpeed);
                 
                 // 🛠️ ANIMATION RESTORATION LOOP: Pulls the enemy sprite assets completely out of its frozen frame
-                enemyRef.anims.play(`${enemyRef.typeId}_walk_key`, true);
+                enemyRef.anims.play(`${enemyRef.typeId}_walk`, true);
             }
         });
     }

@@ -1380,9 +1380,9 @@
         });
     }
 
-    let knockbackDir = enemyRef.x > playerRef.x ? -250 : 200;
+    let knockbackDir = enemyRef.x > playerRef.x ? -280 : 280;
     playerRef.body.setVelocityX(knockbackDir);
-    playerRef.body.setVelocityY(-100);
+    playerRef.body.setVelocityY(-150);
 
     playerRef.anims.play(currentForm === 'diwata' ? 'diwata_hurt' : 'ermitanyo_hurt', true).setTint(0xff5252);
     playerRef.once(currentForm === 'diwata' ? 'animationcomplete-diwata_hurt' : 'animationcomplete-ermitanyo_hurt', () => {

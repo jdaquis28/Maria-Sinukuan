@@ -1353,7 +1353,7 @@
                 }
             }
 
-           hurtPlayer(playerRef, enemyRef) {
+       hurtPlayer(playerRef, enemyRef) {
     if (isDead || isAttacking || isShifting || enemyRef.health <= 0) return;
     isAttacking = true;
     playerHealth = Math.max(0, playerHealth - 15);
@@ -1365,6 +1365,8 @@
     if (enemyRef !== bossBody) {
         enemyRef.isHurt = true;
         enemyRef.body.setVelocityX(0);
+        
+        // 🛠️ FIXED: Matches your exact name format without '_key' (e.g., 'graverobber_attack')
         enemyRef.anims.play(`${enemyRef.typeId}_attack`, true);
 
         enemyRef.once('animationcomplete', () => {
@@ -1372,7 +1374,7 @@
             if (enemyRef.active && enemyRef.health > 0) {
                 enemyRef.body.setVelocityX(enemyRef.flipX ? enemyRef.patrolSpeed : -enemyRef.patrolSpeed);
                 
-                // 🛠️ ANIMATION RESTORATION LOOP: Pulls the enemy sprite assets completely out of its frozen frame
+                // Matches your exact name format without '_key' (e.g., 'graverobber_walk')
                 enemyRef.anims.play(`${enemyRef.typeId}_walk`, true);
             }
         });

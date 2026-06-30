@@ -1367,7 +1367,7 @@
         enemyRef.body.setVelocityX(0);
         
         // 🛠️ FIXED: Matches your exact name format without '_key' (e.g., 'graverobber_attack')
-        enemyRef.anims.play(`${enemyRef.typeId}_attack`, true);
+        enemyRef.anims.play(`${enemyRef.typeId}_attack_key`, true);
 
         enemyRef.once('animationcomplete', () => {
             enemyRef.isHurt = false;
@@ -1375,7 +1375,7 @@
                 enemyRef.body.setVelocityX(enemyRef.flipX ? enemyRef.patrolSpeed : -enemyRef.patrolSpeed);
                 
                 // Matches your exact name format without '_key' (e.g., 'graverobber_walk')
-                enemyRef.anims.play(`${enemyRef.typeId}_walk`, true);
+                enemyRef.anims.play(`${enemyRef.typeId}_walk_key`, true);
             }
         });
     }

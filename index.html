@@ -40,7 +40,7 @@
         height: auto;
         
         /* 🛡️ THE CEILING: If the screen is ultra-wide (like an iPhone/Android landscape), 
-           clamp the box to the exact height of the clear view area so it can NEVER spill downwards. */
+            clamp the box to the exact height of the clear view area so it can NEVER spill downwards. */
         max-height: 100svh; 
         max-width: calc(100svh * 16 / 9);
     }
@@ -70,6 +70,42 @@
         width: 100% !important;
         height: 100% !important;
         object-fit: contain;
+    }
+
+    /* 🖥️ DESKTOP TITLE SCREEN OVERLAY & BUTTONS */
+    #title-screen-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 15;
+        pointer-events: auto;
+    }
+
+    #btn-start-game {
+        position: absolute;
+        top: 66%; /* Sits nicely under your floating subtitle text */
+        width: 240px;
+        height: 60px;
+        background-color: #1b5e20;
+        border: 3px solid #1b5e20;
+        border-radius: 12px; /* Smooth corners matching mobile layouts */
+        color: #ffffff;
+        font-family: 'Courier New', monospace;
+        font-size: 22px;
+        font-weight: bold;
+        cursor: pointer;
+        box-sizing: border-box;
+        box-shadow: 0px 4px 10px rgba(0,0,0,0.5);
+    }
+
+    #btn-start-game:hover {
+        background-color: #2e7d32;
+        color: #a7ffeb;
     }
 
     /* MOBILE BUTTONS LAYER */
@@ -106,16 +142,38 @@
         border-color: #a7ffeb;
     }
     
+    /* 📱 TOUCH SCREEN CONDITIONAL UI TRANSFORMALS */
     @media (pointer: coarse) {
         .mobile-ui-layer {
             display: block;
         }
+
+        /* Automatically morph the desktop button layout into a touchscreen d-pad style button */
+        #btn-start-game {
+            background: rgba(34, 34, 34, 0.6) !important;
+            border: 3px solid #1b5e20 !important;
+            color: #4caf50 !important;
+            font-size: 18px !important;
+            width: 160px !important;
+            height: 60px !important;
+            border-radius: 12px !important;
+        }
+        
+        #btn-start-game:active {
+            background: rgba(27, 94, 32, 0.6) !important;
+            color: #a7ffeb !important;
+            border-color: #a7ffeb !important;
+        }
     }
-</style></head>
+</style>
+</head>
 
 <body>
 
     <div id="game-container">
+        <div id="title-screen-overlay">
+        <button id="btn-start-game">START GAME</button>
+    </div>
         <div class="mobile-ui-layer">
             <div class="touch-btn" id="btn-left" style="left: 15px; bottom: 15px; width: 70px; height: 70px; font-size: 26px;">◀</div>
             <div class="touch-btn" id="btn-right" style="left: 105px; bottom: 15px; width: 70px; height: 70px; font-size: 26px;">▶</div>
@@ -201,65 +259,64 @@
             preload() {
                 this.load.image('arayat_bg', 'assets/images/Cartoon_Forest_BG_03.png');
             }
-            create() {
-                this.scale.refresh();
-                this.add.image(512, 288, 'arayat_bg').setDisplaySize(1024, 576).setAlpha(0.6);
+          create() {
+    this.scale.refresh();
+    this.add.image(512, 288, 'arayat_bg').setDisplaySize(1024, 576).setAlpha(0.6);
 
-                // Pixel Style Hover Title
-                let titleText = this.add.text(512, 180, 'MARIA SINUKUAN', {
-                    fontSize: '64px',
-                    fill: '#a7ffeb',
-                    fontStyle: 'bold',
-                    fontFamily: 'Courier New'
-                }).setOrigin(0.5);
-                titleText.setShadow(5, 5, '#000000', 0, true, true);
+    // Pixel Style Hover Title
+    let titleText = this.add.text(512, 180, 'MARIA SINUKUAN', {
+        fontSize: '64px',
+        fill: '#a7ffeb',
+        fontStyle: 'bold',
+        fontFamily: 'Courier New'
+    }).setOrigin(0.5);
+    titleText.setShadow(5, 5, '#000000', 0, true, true);
 
-                let subtitleText = this.add.text(512, 250, 'Vengeance of Arayat', {
-                    fontSize: '28px',
-                    fill: '#81c784',
-                    fontStyle: 'italic',
-                    fontFamily: 'Courier New'
-                }).setOrigin(0.5);
-                subtitleText.setShadow(2, 2, '#000000', 0, true, true);
+    let subtitleText = this.add.text(512, 250, 'Vengeance of Arayat', {
+        fontSize: '28px',
+        fill: '#81c784',
+        fontStyle: 'italic',
+        fontFamily: 'Courier New'
+    }).setOrigin(0.5);
+    subtitleText.setShadow(2, 2, '#000000', 0, true, true);
 
-                this.tweens.add({
-                    targets: [titleText, subtitleText],
-                    y: '-=15',
-                    duration: 1800,
-                    yoyo: true,
-                    loop: -1,
-                    ease: 'Sine.easeInOut'
-                });
+    this.tweens.add({
+        targets: [titleText, subtitleText],
+        y: '-=15',
+        duration: 1800,
+        yoyo: true,
+        loop: -1,
+        ease: 'Sine.easeInOut'
+    });
 
-                let startBtnBg = this.add.rectangle(512, 390, 240, 60, 0x1b5e20).setInteractive({
-                    useHandCursor: true
-                });
-                let startBtnText = this.add.text(512, 390, 'START GAME', {
-                    fontSize: '22px',
-                    fill: '#ffffff',
-                    fontStyle: 'bold',
-                    fontFamily: 'Courier New'
-                }).setOrigin(0.5);
-
-                startBtnBg.on('pointerover', () => {
-                    startBtnBg.setFillStyle(0x2e7d32);
-                    startBtnText.setFill('#a7ffeb');
-                });
-                startBtnBg.on('pointerout', () => {
-                    startBtnBg.setFillStyle(0x1b5e20);
-                    startBtnText.setFill('#ffffff');
-                });
-
-                // Start Game & Audio Context
-                startBtnBg.on('pointerdown', () => {
-                    if (this.sound.context.state === 'suspended') {
-                        this.sound.context.resume();
-                    }
-                    this.scene.start('GameScene');
-                });
-            }
+    // 🛠️ LINK TO THE EXISTING HTML BUTTON ELEMENTS
+    const overlay = document.getElementById('title-screen-overlay');
+    const startBtn = document.getElementById('btn-start-game');
+    
+    if (overlay) overlay.style.display = 'flex'; // Ensure button shows up on resets
+    
+    // Core engine execution sequence
+    const launchGameEngine = () => {
+        if (overlay) overlay.style.display = 'none'; // Instantly clears button layout out of view
+        if (this.sound.context.state === 'suspended') {
+            this.sound.context.resume(); // Unlocks the web audio manager securely
         }
+        this.scene.start('GameScene');
+    };
 
+    if (startBtn) {
+        // 📱 If loading on a phone browser, attach a touch listener to bypass hitboxes
+        if (this.sys.game.device.input.touch) {
+            startBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault(); // Kills the standard 300ms mobile browser click latency delay
+                launchGameEngine();
+            });
+        } else {
+            // Otherwise use standard mouse click routing on desktops
+            startBtn.onclick = () => launchGameEngine();
+        }
+    }
+}
         // --- 3. CORE GAMEPLAY SCENE ---
         class GameScene extends Phaser.Scene {
             constructor() {

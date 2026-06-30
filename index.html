@@ -993,50 +993,84 @@
                 });
             }
 
-          update() {
-    if (!player || !player.body) return;
-    
-    // 🛠️ FIXED: Checks if Maria is currently playing a hurt animation sequence
-    let isHurt = player.anims.currentAnim && (player.anims.currentAnim.key === 'diwata_hurt' || player.anims.currentAnim.key === 'ermitanyo_hurt');
-    
-    // 🛠️ FIXED: Added "&& !isHurt" so the engine lets the slide knockback run cleanly
-    if (isDead || isShifting || (isAttacking && !isHurt)) {
-        player.body.setVelocityX(0);
-        return;
-    }
+         update() {
 
-    if (this.cursors.left.isDown || this.keys.A.isDown || moveLeft) {
-        player.body.setVelocityX(-240);
-        player.flipX = true;
-        if (player.body.touching.down) player.anims.play(currentForm === 'diwata' ? 'diwata_walk' : 'ermitanyo_walk', true);
-    } else if (this.cursors.right.isDown || this.keys.D.isDown || moveRight) {
-        player.body.setVelocityX(240);
-        player.flipX = false;
-        if (player.body.touching.down) player.anims.play(currentForm === 'diwata' ? 'diwata_walk' : 'ermitanyo_walk', true);
-    } else {
-        player.body.setVelocityX(0);
-        if (player.body.touching.down) player.anims.play(currentForm === 'diwata' ? 'diwata_idle' : 'ermitanyo_idle', true);
-    }
+                if (!player || !player.body) return;
 
-    if (currentForm === 'diwata') {
-        player.body.setSize(18, 44, false).setOffset(player.flipX ? 15 : 15, 4);
-    } else {
-        player.body.setSize(32, 50, false).setOffset(player.flipX ? 48 : 48, 74);
-    }
+                if (isDead || isShifting || isAttacking) {
 
-    if ((this.cursors.up.isDown || this.keys.W.isDown) && player.body.touching.down) {
-        player.body.setVelocityY(-620);
-    }
+                    player.body.setVelocityX(0);
 
-    if (!player.body.touching.down) player.anims.play(currentForm === 'diwata' ? 'diwata_idle' : 'ermitanyo_idle', true);
+                    return;
 
-    if (Phaser.Input.Keyboard.JustDown(this.keys.shift)) this.handleFormShift();
-    if (Phaser.Input.Keyboard.JustDown(this.keys.attack)) this.processAttack(this);
-    if (Phaser.Input.Keyboard.JustDown(this.keys.super) && wrath >= 100) this.triggerVolcanicWrath(this);
+                }
 
-    this.processPatrols();
-    this.updateBossPosition();
-}
+
+
+                if (this.cursors.left.isDown || this.keys.A.isDown || moveLeft) {
+
+                    player.body.setVelocityX(-240);
+
+                    player.flipX = true;
+
+                    if (player.body.touching.down) player.anims.play(currentForm === 'diwata' ? 'diwata_walk' : 'ermitanyo_walk', true);
+
+                } else if (this.cursors.right.isDown || this.keys.D.isDown || moveRight) {
+
+                    player.body.setVelocityX(240);
+
+                    player.flipX = false;
+
+                    if (player.body.touching.down) player.anims.play(currentForm === 'diwata' ? 'diwata_walk' : 'ermitanyo_walk', true);
+
+                } else {
+
+                    player.body.setVelocityX(0);
+
+                    if (player.body.touching.down) player.anims.play(currentForm === 'diwata' ? 'diwata_idle' : 'ermitanyo_idle', true);
+
+                }
+
+
+
+                if (currentForm === 'diwata') {
+
+                    player.body.setSize(18, 44, false).setOffset(player.flipX ? 15 : 15, 4);
+
+                } else {
+
+                    player.body.setSize(32, 50, false).setOffset(player.flipX ? 48 : 48, 74);
+
+                }
+
+
+
+                if ((this.cursors.up.isDown || this.keys.W.isDown) && player.body.touching.down) {
+
+                    player.body.setVelocityY(-620);
+
+                }
+
+
+
+                if (!player.body.touching.down) player.anims.play(currentForm === 'diwata' ? 'diwata_idle' : 'ermitanyo_idle', true);
+
+
+
+                if (Phaser.Input.Keyboard.JustDown(this.keys.shift)) this.handleFormShift();
+
+                if (Phaser.Input.Keyboard.JustDown(this.keys.attack)) this.processAttack(this);
+
+                if (Phaser.Input.Keyboard.JustDown(this.keys.super) && wrath >= 100) this.triggerVolcanicWrath(this);
+
+
+
+                this.processPatrols();
+
+                this.updateBossPosition();
+
+            } 
+
 
             handleFormShift() {
                 if (!canTransform || isShifting || isDead) {
